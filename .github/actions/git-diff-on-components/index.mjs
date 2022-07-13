@@ -1,8 +1,8 @@
-const core = require("@actions/core");
-const github = require("@actions/github");
+import core from "@actions/core";
+import github from "@actions/github";
 
 try {
-  console.log("Action version 0.0.1");
+  console.log("Action version 0.0.2");
 
   const baseCommit = core.getInput("base_commit");
   const headCommit = core.getInput("head_commit");

@@ -15,4 +15,4 @@ outputs:
     description: "Message"
 runs:
   using: "node16"
-  main: "index.js"
+  main: "dist/index.mjs"
