@@ -5,7 +5,6 @@ gh-md-toc
 .vscode
 .idea
 node_modules
-!.github/actions/**/node_modules
 .eslintcache
 eslint/_logs
 
