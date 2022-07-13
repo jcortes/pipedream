@@ -52,7 +52,7 @@ jobs:
         env:
           head_commit: ${{ github.event.pull_request.head.sha }}
           base_commit: ${{ github.event.pull_request.base.sha }}
-        run: ./scripts/gitDiffOnComponents.js
+        run: node ./scripts/gitDiffOnComponents.js
         
 
   spellcheck:
