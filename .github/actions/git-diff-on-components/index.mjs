@@ -2,7 +2,7 @@ import { readFile } from "fs/promises";
 import core from "@actions/core";
 import { exec } from "@actions/exec";
 
-console.log("Action version 0.0.10");
+console.log("Action version 0.0.11");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -41,7 +41,7 @@ async function execCmd(...args) {
 
 async function run() {
   try {
-    const promises = allFiles
+    const contentFilesPromises = allFiles
       .filter((filePath) => {
         const [extension] = filePath.split(".").reverse();
         return !filePath.startsWith(".")
@@ -49,23 +49,30 @@ async function run() {
           && componentJSFiles.test(filePath)
           && !commonJSFiles.test(filePath);
       })
-      .filter(async (filePath) => {
-        const contents = await readFile(filePath, "utf-8");
-        return contents.includes("version:");
-      })
-      .map((filePath) => {
-        const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
-        return { filePath, diffContent: execCmd("git", args) };
-      });
+      .filter((filePath) => readFile(filePath, "utf-8"));
 
-    const responses = await Promise.all(promises);
+    const contentFiles = await Promise.all(contentFilesPromises);
 
-    const versionComponents = responses.map(({ filePath, diffContent }) => {
-      const versionHasChanged = diffContent.includes("version:");
-      return { filePath, versionHasChanged };
-    });
+    console.log("contentFiles", contentFiles);
 
-    console.log("versionComponents", versionComponents);
+    // contentFiles
+    //   .map((contents) => {
+    //     console.log("typeof(contents)", typeof(contents));
+    //     return contents.includes("version:");
+    //   })
+    //   .map((filePath) => {
+    //     const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
+    //     return { filePath, diffContent: execCmd("git", args) };
+    //   });
+
+    // const responses = await Promise.all(promises);
+
+    // const versionComponents = responses.map(({ filePath, diffContent }) => {
+    //   const versionHasChanged = diffContent.includes("version:");
+    //   return { filePath, versionHasChanged };
+    // });
+
+    // console.log("versionComponents", versionComponents);
   
   } catch (error) {
     core.setFailed(error.message);

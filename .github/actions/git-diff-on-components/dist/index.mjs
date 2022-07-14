@@ -3409,13 +3409,13 @@ const promises_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.ur
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(186);
 // EXTERNAL MODULE: ./node_modules/@actions/exec/lib/exec.js
-var exec = __nccwpck_require__(514);
+var lib_exec = __nccwpck_require__(514);
 ;// CONCATENATED MODULE: ./index.mjs
 
 
 
 
-console.log("Action version 0.0.10");
+console.log("Action version 0.0.11");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -3435,7 +3435,7 @@ async function execCmd(...args) {
   let error = "";
 
   return new Promise(async (resolve, reject) => {
-    await (0,exec.exec)(...args, {
+    await exec(...args, {
       listeners: {
         stdout: (data) => {
           output += data.toString();
@@ -3454,7 +3454,7 @@ async function execCmd(...args) {
 
 async function run() {
   try {
-    const promises = allFiles
+    const contentFilesPromises = allFiles
       .filter((filePath) => {
         const [extension] = filePath.split(".").reverse();
         return !filePath.startsWith(".")
@@ -3462,23 +3462,30 @@ async function run() {
           && componentJSFiles.test(filePath)
           && !commonJSFiles.test(filePath);
       })
-      .filter(async (filePath) => {
-        const contents = await (0,promises_namespaceObject.readFile)(filePath, "utf-8");
-        return contents.includes("version:");
-      })
-      .map((filePath) => {
-        const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
-        return { filePath, diffContent: execCmd("git", args) };
-      });
+      .filter((filePath) => (0,promises_namespaceObject.readFile)(filePath, "utf-8"));
 
-    const responses = await Promise.all(promises);
+    const contentFiles = await Promise.all(contentFilesPromises);
 
-    const versionComponents = responses.map(({ filePath, diffContent }) => {
-      const versionHasChanged = diffContent.includes("version:");
-      return { filePath, versionHasChanged };
-    });
+    console.log("contentFiles", contentFiles);
 
-    console.log("versionComponents", versionComponents);
+    // contentFiles
+    //   .map((contents) => {
+    //     console.log("typeof(contents)", typeof(contents));
+    //     return contents.includes("version:");
+    //   })
+    //   .map((filePath) => {
+    //     const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
+    //     return { filePath, diffContent: execCmd("git", args) };
+    //   });
+
+    // const responses = await Promise.all(promises);
+
+    // const versionComponents = responses.map(({ filePath, diffContent }) => {
+    //   const versionHasChanged = diffContent.includes("version:");
+    //   return { filePath, versionHasChanged };
+    // });
+
+    // console.log("versionComponents", versionComponents);
   
   } catch (error) {
     core.setFailed(error.message);
