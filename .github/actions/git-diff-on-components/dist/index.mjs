@@ -3415,7 +3415,7 @@ var exec = __nccwpck_require__(514);
 
 
 
-console.log("Action version 0.0.16");
+console.log("Action version 0.0.17");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -3485,12 +3485,20 @@ async function run() {
     const diffContents = await Promise.all(diffContentPromises);
     // console.log("diffContent", diffContent);
 
-    const versionComponents = diffContents.map(({ filePath, diffContent }) => {
-      const versionHasChanged = diffContent.includes("version:");
-      return { filePath, versionHasChanged };
+    const componentsThatDidNotModifyVersion =
+      diffContents
+        .filter(({ diffContent }) => !diffContent.includes("version:"))
+        .map(({ filePath }) => filePath);
+
+    componentsThatDidNotModifyVersion.forEach((filePath) => {
+      console.log(`You didn't modify the version of ${filePath}`);
     });
 
-    console.log("versionComponents", versionComponents);
+    if (componentsThatDidNotModifyVersion.length) {
+      console.log("You need to increment the version on some components. Please see the output above and https://pipedream.com/docs/components/guidelines/#versioning for more information");
+    }
+
+    core.setOutput("components_that_did_not_modify_version", componentsThatDidNotModifyVersion);
   
   } catch (error) {
     core.setFailed(error.message);
