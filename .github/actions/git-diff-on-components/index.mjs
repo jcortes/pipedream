@@ -33,9 +33,11 @@ async function execCmd(...args) {
 }
 
 function getFilteredFilePaths({ allFilePaths = [], allowCommonFiles } = {}) {
+  console.log("allowCommonFiles", allowCommonFiles);
   return allFilePaths
     .filter((filePath) => {
       const commonFilesCheck = allowCommonFiles || !commonFiles.test(filePath);
+      console.log("filePath", commonFilesCheck);
       const [extension] = filePath.split(".").reverse();
       return !filePath.startsWith(".")
         && allowedExtensions.includes(extension)
@@ -91,11 +93,11 @@ async function run() {
       console.log(`You didn't modify the version of ${filePath}`);
     });
 
-    core.setOutput("components_that_did_not_modify_version", componentsThatDidNotModifyVersion);
-
     if (componentsThatDidNotModifyVersion.length) {
       core.setFailed("You need to increment the version on some components. Please see the output above and https://pipedream.com/docs/components/guidelines/#versioning for more information");
     }
+
+    core.setOutput("components_that_did_not_modify_version", componentsThatDidNotModifyVersion);
   
   } catch (error) {
     core.setFailed(error.message);
