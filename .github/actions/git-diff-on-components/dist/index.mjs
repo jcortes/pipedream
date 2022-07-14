@@ -3415,11 +3415,11 @@ var exec = __nccwpck_require__(514);
 
 
 
-console.log("Action version 0.0.4");
+console.log("Action version 0.0.5");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
-const allFiles = core.getInput("all_files");
+const allFiles = JSON.parse(core.getInput("all_files"));
 
 console.log("baseCommit", baseCommit);
 console.log("headCommit", headCommit);
