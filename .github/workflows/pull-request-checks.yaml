@@ -48,12 +48,6 @@ jobs:
           all_files: ${{ steps.changed_files.outputs.all }}
           base_commit: ${{ github.event.pull_request.base.sha }}
           head_commit: ${{ github.event.pull_request.head.sha }}
-      # - name: Check git diff for version changes
-      #   env:
-      #     head_commit: ${{ github.event.pull_request.head.sha }}
-      #     base_commit: ${{ github.event.pull_request.base.sha }}
-      #   run: node ./scripts/gitDiffOnComponents.js
-        
 
   spellcheck:
     name: Spellcheck

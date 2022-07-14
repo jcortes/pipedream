@@ -1,25 +1,72 @@
+import { readFile } from "fs/promises";
 import core from "@actions/core";
 import github from "@actions/github";
+import { exec } from "@actions/exec";
+import { run } from "jest";
 
-try {
-  console.log("Action version 0.0.2");
+console.log("Action version 0.0.2");
 
-  const baseCommit = core.getInput("base_commit");
-  const headCommit = core.getInput("head_commit");
-  const allFiles = core.getInput("all_files");
+const baseCommit = core.getInput("base_commit");
+const headCommit = core.getInput("head_commit");
+const allFiles = core.getInput("all_files");
 
-  console.log("baseCommit", baseCommit);
-  console.log("headCommit", headCommit);
-  console.log("allFiles", allFiles);
+console.log("baseCommit", baseCommit);
+console.log("headCommit", headCommit);
+console.log("allFiles", allFiles);
 
-  core.setOutput("baseCommit output", baseCommit);
-  core.setOutput("headCommit output", headCommit);
-  core.setOutput("allFiles output", allFiles);
+const allowedExtensions = ["js", "mjs", "ts"];
+const componentJSFiles = new RegExp("^.*components\/.*\/sources|actions\/.*\.[t|j|mj]s$");
+const commonJSFiles = new RegExp("^.*common.*\.[t|j|mj]s$");
+const componentVersion = new RegExp("version:", "g");
 
-  // Get the JSON webhook payload for the event that triggered the workflow
-  const payload = JSON.stringify(github.context.payload, undefined, 2)
-  console.log(`The event payload: ${payload}`);
+async function execCmd(...args) {
+  let output = "";
+  let error = "";
 
-} catch (error) {
-  core.setFailed(error.message);
+  return new Promise(async (resolve, reject) => {
+    await exec(...args, {
+      listeners: {
+        stdout: (data) => {
+          output += data.toString();
+        },
+        stderr: (data) => {
+          error += data.toString();
+        }
+      }
+    });
+    if (error) {
+      return reject(error);
+    }
+    return resolve(output)
+  });
 }
+
+async function run() {
+  try {
+    const promises = allFiles
+      .filter((filePath) => {
+        const [extension] = filePath.split(".").reverse();
+        return allowedExtensions.includes(extension)
+          && componentJSFiles.test(filePath)
+          && !commonJSFiles.test(filePath);
+      })
+      .filter(async (filePath) => {
+        const contents = await readFile(filePath, "utf-8");
+        console.log("contents", contents);
+        // return componentVersion.test(contents);
+        return contents.includes("version:");
+      })
+      .map(async (filePath) => {
+        const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
+        return execCmd("git", args);
+      });
+
+    const responses = await Promise.all(promises);
+    console.log("responses", responses);
+  
+  } catch (error) {
+    core.setFailed(error.message);
+  }
+}
+
+run();
