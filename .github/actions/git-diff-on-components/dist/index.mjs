@@ -3415,7 +3415,7 @@ var lib_exec = __nccwpck_require__(514);
 
 
 
-console.log("Action version 0.0.13");
+console.log("Action version 0.0.14");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -3467,18 +3467,19 @@ async function run() {
         contents: await (0,promises_namespaceObject.readFile)(filePath, "utf-8")
       }));
 
-    const contentFiles = await Promise.all(contentFilesPromises);
+    console.log("contentFilesPromises", contentFilesPromises);
+    // const contentFiles = await Promise.all(contentFilesPromises);
 
-    console.log("contentFiles", contentFiles);
+    // console.log("contentFiles", contentFiles);
 
     // contentFiles
-    //   .map((contents) => {
-    //     console.log("typeof(contents)", typeof(contents));
-    //     return contents.includes("version:");
-    //   })
-    //   .map((filePath) => {
+    //   .filter(({ filePath, contents }) => contents.includes("version:"))
+    //   .map(({ filePath, contents }) => {
     //     const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
-    //     return { filePath, diffContent: execCmd("git", args) };
+    //     return {
+    //       filePath,
+    //       diffContent: execCmd("git", args)
+    //     };
     //   });
 
     // const responses = await Promise.all(promises);
