@@ -3,8 +3,8 @@ import core from "@actions/core";
 import { exec } from "@actions/exec";
 
 const allowedExtensions = ["js", "mjs", "ts"];
-const componentJSFiles = new RegExp("^.*components\/.*\/sources|actions\/.*\.[t|j|mj]s$");
-const commonJSFiles = new RegExp("^.*common.*\.[t|j|mj]s$");
+const componentFiles = new RegExp("^.*components\/.*\/sources|actions\/.*\.[t|j|mj]s$");
+const commonFiles = new RegExp("^.*common.*\.[t|j|mj]s$");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -32,41 +32,60 @@ async function execCmd(...args) {
   });
 }
 
+function getFilteredFilePaths({ allFilePaths = [], allowCommonFiles } = {}) {
+  const commonFilesCheck = allowCommonFiles || !commonFiles.test(filePath);
+  return allFilePaths
+    .filter((filePath) => {
+      const [extension] = filePath.split(".").reverse();
+      return !filePath.startsWith(".")
+        && allowedExtensions.includes(extension)
+        && componentFiles.test(filePath)
+        && commonFilesCheck;
+    });
+}
+
+async function getFilesContent(filteredFilePaths = []) {
+  const contentFilesPromises =
+    filteredFilePaths
+      .map(async (filePath) => ({
+        filePath,
+        contents: await readFile(filePath, "utf-8")
+      }));
+
+  return Promise.all(contentFilesPromises);
+}
+
+async function getDiffsContent(filesContent = []) {
+  const diffContentPromises =
+    filesContent
+      .filter(({ contents }) => contents.includes("version:"))
+      .map(async ({ filePath }) => {
+        const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
+        return {
+          filePath,
+          diffContent: await execCmd("git", args)
+        };
+      });
+
+  return Promise.all(diffContentPromises);
+}
+
+function getUnmodifiedComponents(diffsContent) {
+  return diffsContent
+    .filter(({ diffContent }) => !diffContent.includes("version:"))
+    .map(({ filePath }) => filePath);
+}
+
 async function run() {
   try {
-    const contentFilesPromises =
-      allFiles
-        .filter((filePath) => {
-          const [extension] = filePath.split(".").reverse();
-          return !filePath.startsWith(".")
-            && allowedExtensions.includes(extension)
-            && componentJSFiles.test(filePath)
-            && !commonJSFiles.test(filePath);
-        })
-        .map(async (filePath) => ({
-          filePath,
-          contents: await readFile(filePath, "utf-8")
-        }));
+    const filteredWithCommonFilePaths = getFilteredFilePaths({ allFilePaths: allFiles, allowCommonFiles: true });
+    const filteredFilePaths = getFilteredFilePaths({ allFilePaths: allFiles });
+    const filesContent = await getFilesContent(filteredFilePaths);
+    const diffsContent = await getDiffsContent(filesContent);
+    const componentsThatDidNotModifyVersion = getUnmodifiedComponents(diffsContent);
 
-    const contentFiles = await Promise.all(contentFilesPromises);
-
-    const diffContentPromises =
-      contentFiles
-        .filter(({ contents }) => contents.includes("version:"))
-        .map(async ({ filePath }) => {
-          const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
-          return {
-            filePath,
-            diffContent: await execCmd("git", args)
-          };
-        });
-
-    const diffContents = await Promise.all(diffContentPromises);
-
-    const componentsThatDidNotModifyVersion =
-      diffContents
-        .filter(({ diffContent }) => !diffContent.includes("version:"))
-        .map(({ filePath }) => filePath);
+    console.log("filteredFilePaths", filteredFilePaths);
+    console.log("filteredWithCommonFilePaths", filteredWithCommonFilePaths);
 
     componentsThatDidNotModifyVersion.forEach((filePath) => {
       console.log(`You didn't modify the version of ${filePath}`);
