@@ -3415,7 +3415,7 @@ var exec = __nccwpck_require__(514);
 
 
 
-console.log("Action version 0.0.9");
+console.log("Action version 0.0.10");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -3466,20 +3466,19 @@ async function run() {
         const contents = await (0,promises_namespaceObject.readFile)(filePath, "utf-8");
         return contents.includes("version:");
       })
-      .map(async (filePath) => {
+      .map((filePath) => {
         const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
-        console.log("filePath", filePath);
-        const diffContent = await execCmd("git", args);
-        console.log("diffContent", diffContent);
-        return { filePath, diffContent };
-      })
-      .map(({ filePath, diffContent }) => {
-        const versionHasChanged = diffContent.includes("version:");
-        return { filePath, versionHasChanged };
+        return { filePath, diffContent: execCmd("git", args) };
       });
 
     const responses = await Promise.all(promises);
-    console.log("responses", responses);
+
+    const versionComponents = responses.map(({ filePath, diffContent }) => {
+      const versionHasChanged = diffContent.includes("version:");
+      return { filePath, versionHasChanged };
+    });
+
+    console.log("versionComponents", versionComponents);
   
   } catch (error) {
     core.setFailed(error.message);
