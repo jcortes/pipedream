@@ -2,7 +2,7 @@ import { readFile } from "fs/promises";
 import core from "@actions/core";
 import { exec } from "@actions/exec";
 
-console.log("Action version 0.0.11");
+console.log("Action version 0.0.12");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -49,7 +49,10 @@ async function run() {
           && componentJSFiles.test(filePath)
           && !commonJSFiles.test(filePath);
       })
-      .filter((filePath) => readFile(filePath, "utf-8"));
+      .map((filePath) => ({
+        filePath,
+        contents: readFile(filePath, "utf-8")
+      }));
 
     const contentFiles = await Promise.all(contentFilesPromises);
 
