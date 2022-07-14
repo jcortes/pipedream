@@ -2,7 +2,7 @@ import { readFile } from "fs/promises";
 import core from "@actions/core";
 import { exec } from "@actions/exec";
 
-console.log("Action version 0.0.15");
+console.log("Action version 0.0.16");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -56,7 +56,6 @@ async function run() {
         }));
 
     const contentFiles = await Promise.all(contentFilesPromises);
-
     // console.log("contentFiles", contentFiles);
 
     const diffContentPromises =
@@ -70,16 +69,15 @@ async function run() {
           };
         });
 
-    const diffContent = await Promise.all(diffContentPromises);
-    console.log("diffContent", diffContent);
-    // const responses = await Promise.all(promises);
+    const diffContents = await Promise.all(diffContentPromises);
+    // console.log("diffContent", diffContent);
 
-    // const versionComponents = responses.map(({ filePath, diffContent }) => {
-    //   const versionHasChanged = diffContent.includes("version:");
-    //   return { filePath, versionHasChanged };
-    // });
+    const versionComponents = diffContents.map(({ filePath, diffContent }) => {
+      const versionHasChanged = diffContent.includes("version:");
+      return { filePath, versionHasChanged };
+    });
 
-    // console.log("versionComponents", versionComponents);
+    console.log("versionComponents", versionComponents);
   
   } catch (error) {
     core.setFailed(error.message);
