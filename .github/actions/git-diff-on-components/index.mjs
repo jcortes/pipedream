@@ -5,6 +5,7 @@ import { exec } from "@actions/exec";
 const allowedExtensions = ["js", "mjs", "ts"];
 const componentFiles = new RegExp("^.*components\/.*\/sources|actions\/.*\.[t|j|mj]s$");
 const commonFiles = new RegExp("^.*common.*\.[t|j|mj]s$");
+const otherFiles = new RegExp("^.*components\/.*\.[t|j|mj]s$");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -32,17 +33,20 @@ async function execCmd(...args) {
   });
 }
 
-function getFilteredFilePaths({ allFilePaths = [], allowCommonFiles } = {}) {
-  console.log("allowCommonFiles", allowCommonFiles);
+function getFilteredFilePaths({ allFilePaths = [], allowOtherFiles } = {}) {
+  console.log("allowOtherFiles", allowOtherFiles);
   return allFilePaths
     .filter((filePath) => {
-      const commonFilesCheck = allowCommonFiles || !commonFiles.test(filePath);
-      console.log("filePath", filePath, commonFilesCheck);
+      const otherFilesCheck =
+        allowOtherFiles
+          ? commonFiles.test(filePath) || otherFiles.test(filePath)
+          : !commonFiles.test(filePath);
+      console.log("filePath", filePath, otherFilesCheck);
       const [extension] = filePath.split(".").reverse();
       return !filePath.startsWith(".")
         && allowedExtensions.includes(extension)
         && componentFiles.test(filePath)
-        && commonFilesCheck;
+        && otherFilesCheck;
     });
 }
 
@@ -80,7 +84,7 @@ function getUnmodifiedComponents(diffsContent) {
 
 async function run() {
   try {
-    const filteredWithCommonFilePaths = getFilteredFilePaths({ allFilePaths: allFiles, allowCommonFiles: true });
+    const filteredWithCommonFilePaths = getFilteredFilePaths({ allFilePaths: allFiles, allowOtherFiles: true });
     const filteredFilePaths = getFilteredFilePaths({ allFilePaths: allFiles });
     const filesContent = await getFilesContent(filteredFilePaths);
     const diffsContent = await getDiffsContent(filesContent);
