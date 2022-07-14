@@ -3453,11 +3453,10 @@ function getFilteredFilePaths({ allFilePaths = [], allowOtherFiles } = {}) {
       const otherFilesCheck =
         allowOtherFiles
           ? commonFiles.test(filePath) || otherFiles.test(filePath)
-          : !commonFiles.test(filePath);
+          : componentFiles.test(filePath) && !commonFiles.test(filePath);
           const [extension] = filePath.split(".").reverse();
       const validation = !filePath.startsWith(".")
         && allowedExtensions.includes(extension)
-        && componentFiles.test(filePath)
         && otherFilesCheck;
       console.log(
         "filePath",
