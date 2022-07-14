@@ -2,7 +2,7 @@ import { readFile } from "fs/promises";
 import core from "@actions/core";
 import { exec } from "@actions/exec";
 
-console.log("Action version 0.0.14");
+console.log("Action version 0.0.15");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -41,34 +41,37 @@ async function execCmd(...args) {
 
 async function run() {
   try {
-    const contentFilesPromises = allFiles
-      .filter((filePath) => {
-        const [extension] = filePath.split(".").reverse();
-        return !filePath.startsWith(".")
-          && allowedExtensions.includes(extension)
-          && componentJSFiles.test(filePath)
-          && !commonJSFiles.test(filePath);
-      })
-      .map(async (filePath) => ({
-        filePath,
-        contents: await readFile(filePath, "utf-8")
-      }));
+    const contentFilesPromises =
+      allFiles
+        .filter((filePath) => {
+          const [extension] = filePath.split(".").reverse();
+          return !filePath.startsWith(".")
+            && allowedExtensions.includes(extension)
+            && componentJSFiles.test(filePath)
+            && !commonJSFiles.test(filePath);
+        })
+        .map(async (filePath) => ({
+          filePath,
+          contents: await readFile(filePath, "utf-8")
+        }));
 
-    console.log("contentFilesPromises", contentFilesPromises);
-    // const contentFiles = await Promise.all(contentFilesPromises);
+    const contentFiles = await Promise.all(contentFilesPromises);
 
     // console.log("contentFiles", contentFiles);
 
-    // contentFiles
-    //   .filter(({ filePath, contents }) => contents.includes("version:"))
-    //   .map(({ filePath, contents }) => {
-    //     const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
-    //     return {
-    //       filePath,
-    //       diffContent: execCmd("git", args)
-    //     };
-    //   });
+    const diffContentPromises =
+      contentFiles
+        .filter(({ contents }) => contents.includes("version:"))
+        .map(async ({ filePath }) => {
+          const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
+          return {
+            filePath,
+            diffContent: await execCmd("git", args)
+          };
+        });
 
+    const diffContent = await Promise.all(diffContentPromises);
+    console.log("diffContent", diffContent);
     // const responses = await Promise.all(promises);
 
     // const versionComponents = responses.map(({ filePath, diffContent }) => {

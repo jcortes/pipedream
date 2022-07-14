@@ -3409,13 +3409,13 @@ const promises_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.ur
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(186);
 // EXTERNAL MODULE: ./node_modules/@actions/exec/lib/exec.js
-var lib_exec = __nccwpck_require__(514);
+var exec = __nccwpck_require__(514);
 ;// CONCATENATED MODULE: ./index.mjs
 
 
 
 
-console.log("Action version 0.0.14");
+console.log("Action version 0.0.15");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -3435,7 +3435,7 @@ async function execCmd(...args) {
   let error = "";
 
   return new Promise(async (resolve, reject) => {
-    await exec(...args, {
+    await (0,exec.exec)(...args, {
       listeners: {
         stdout: (data) => {
           output += data.toString();
@@ -3454,34 +3454,37 @@ async function execCmd(...args) {
 
 async function run() {
   try {
-    const contentFilesPromises = allFiles
-      .filter((filePath) => {
-        const [extension] = filePath.split(".").reverse();
-        return !filePath.startsWith(".")
-          && allowedExtensions.includes(extension)
-          && componentJSFiles.test(filePath)
-          && !commonJSFiles.test(filePath);
-      })
-      .map(async (filePath) => ({
-        filePath,
-        contents: await (0,promises_namespaceObject.readFile)(filePath, "utf-8")
-      }));
+    const contentFilesPromises =
+      allFiles
+        .filter((filePath) => {
+          const [extension] = filePath.split(".").reverse();
+          return !filePath.startsWith(".")
+            && allowedExtensions.includes(extension)
+            && componentJSFiles.test(filePath)
+            && !commonJSFiles.test(filePath);
+        })
+        .map(async (filePath) => ({
+          filePath,
+          contents: await (0,promises_namespaceObject.readFile)(filePath, "utf-8")
+        }));
 
-    console.log("contentFilesPromises", contentFilesPromises);
-    // const contentFiles = await Promise.all(contentFilesPromises);
+    const contentFiles = await Promise.all(contentFilesPromises);
 
     // console.log("contentFiles", contentFiles);
 
-    // contentFiles
-    //   .filter(({ filePath, contents }) => contents.includes("version:"))
-    //   .map(({ filePath, contents }) => {
-    //     const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
-    //     return {
-    //       filePath,
-    //       diffContent: execCmd("git", args)
-    //     };
-    //   });
+    const diffContentPromises =
+      contentFiles
+        .filter(({ contents }) => contents.includes("version:"))
+        .map(async ({ filePath }) => {
+          const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
+          return {
+            filePath,
+            diffContent: await execCmd("git", args)
+          };
+        });
 
+    const diffContent = await Promise.all(diffContentPromises);
+    console.log("diffContent", diffContent);
     // const responses = await Promise.all(promises);
 
     // const versionComponents = responses.map(({ filePath, diffContent }) => {
