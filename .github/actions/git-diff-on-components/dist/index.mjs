@@ -3454,12 +3454,20 @@ function getFilteredFilePaths({ allFilePaths = [], allowOtherFiles } = {}) {
         allowOtherFiles
           ? commonFiles.test(filePath) || otherFiles.test(filePath)
           : !commonFiles.test(filePath);
-      console.log("filePath", filePath, otherFilesCheck);
-      const [extension] = filePath.split(".").reverse();
-      return !filePath.startsWith(".")
+          const [extension] = filePath.split(".").reverse();
+      const validation = !filePath.startsWith(".")
         && allowedExtensions.includes(extension)
         && componentFiles.test(filePath)
         && otherFilesCheck;
+      console.log(
+        "filePath",
+        filePath,
+        !filePath.startsWith("."),
+        allowedExtensions.includes(extension),
+        componentFiles.test(filePath),
+        otherFilesCheck
+      );
+      return validation;
     });
 }
 
