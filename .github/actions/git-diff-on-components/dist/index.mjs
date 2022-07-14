@@ -3415,7 +3415,7 @@ var exec = __nccwpck_require__(514);
 
 
 
-console.log("Action version 0.0.5");
+console.log("Action version 0.0.6");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -3424,7 +3424,6 @@ const allFiles = JSON.parse(core.getInput("all_files"));
 console.log("baseCommit", baseCommit);
 console.log("headCommit", headCommit);
 console.log("allFiles", allFiles);
-console.log("typeof(allFiles)", typeof(allFiles));
 
 const allowedExtensions = ["js", "mjs", "ts"];
 const componentJSFiles = new RegExp("^.*components\/.*\/sources|actions\/.*\.[t|j|mj]s$");
@@ -3464,11 +3463,10 @@ async function run() {
       })
       .filter(async (filePath) => {
         const contents = await (0,promises_namespaceObject.readFile)(filePath, "utf-8");
-        console.log("contents", contents);
-        // return componentVersion.test(contents);
         return contents.includes("version:");
       })
       .map(async (filePath) => {
+        console.log("filePath", filePath);
         const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
         return execCmd("git", args);
       });
