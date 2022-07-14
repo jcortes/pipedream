@@ -1,10 +1,8 @@
 import { readFile } from "fs/promises";
 import core from "@actions/core";
-import github from "@actions/github";
 import { exec } from "@actions/exec";
-import { run } from "jest";
 
-console.log("Action version 0.0.2");
+console.log("Action version 0.0.3");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
