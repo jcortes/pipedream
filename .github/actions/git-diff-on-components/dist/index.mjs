@@ -3415,7 +3415,7 @@ var exec = __nccwpck_require__(514);
 
 
 
-console.log("Action version 0.0.8");
+console.log("Action version 0.0.9");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -3467,12 +3467,13 @@ async function run() {
         return contents.includes("version:");
       })
       .map(async (filePath) => {
-        console.log("filePath", filePath);
         const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
+        console.log("filePath", filePath);
         const diffContent = await execCmd("git", args);
-        return [filePath, diffContent];
+        console.log("diffContent", diffContent);
+        return { filePath, diffContent };
       })
-      .map(([filePath, diffContent]) => {
+      .map(({ filePath, diffContent }) => {
         const versionHasChanged = diffContent.includes("version:");
         return { filePath, versionHasChanged };
       });
