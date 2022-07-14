@@ -37,7 +37,7 @@ function getFilteredFilePaths({ allFilePaths = [], allowCommonFiles } = {}) {
   return allFilePaths
     .filter((filePath) => {
       const commonFilesCheck = allowCommonFiles || !commonFiles.test(filePath);
-      console.log("filePath", commonFilesCheck);
+      console.log("filePath", filePath, commonFilesCheck);
       const [extension] = filePath.split(".").reverse();
       return !filePath.startsWith(".")
         && allowedExtensions.includes(extension)
