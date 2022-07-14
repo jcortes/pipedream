@@ -2,7 +2,7 @@ import { readFile } from "fs/promises";
 import core from "@actions/core";
 import { exec } from "@actions/exec";
 
-console.log("Action version 0.0.7");
+console.log("Action version 0.0.8");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -56,7 +56,12 @@ async function run() {
       .map(async (filePath) => {
         console.log("filePath", filePath);
         const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
-        return execCmd("git", args);
+        const diffContent = await execCmd("git", args);
+        return [filePath, diffContent];
+      })
+      .map(([filePath, diffContent]) => {
+        const versionHasChanged = diffContent.includes("version:");
+        return { filePath, versionHasChanged };
       });
 
     const responses = await Promise.all(promises);
