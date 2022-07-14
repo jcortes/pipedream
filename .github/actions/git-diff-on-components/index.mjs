@@ -2,7 +2,7 @@ import { readFile } from "fs/promises";
 import core from "@actions/core";
 import { exec } from "@actions/exec";
 
-console.log("Action version 0.0.6");
+console.log("Action version 0.0.7");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -44,7 +44,8 @@ async function run() {
     const promises = allFiles
       .filter((filePath) => {
         const [extension] = filePath.split(".").reverse();
-        return allowedExtensions.includes(extension)
+        return !filePath.startsWith(".")
+          && allowedExtensions.includes(extension)
           && componentJSFiles.test(filePath)
           && !commonJSFiles.test(filePath);
       })
