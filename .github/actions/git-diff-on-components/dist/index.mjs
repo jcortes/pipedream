@@ -3446,9 +3446,9 @@ async function execCmd(...args) {
 }
 
 function getFilteredFilePaths({ allFilePaths = [], allowCommonFiles } = {}) {
-  const commonFilesCheck = allowCommonFiles || !commonFiles.test(filePath);
   return allFilePaths
     .filter((filePath) => {
+      const commonFilesCheck = allowCommonFiles || !commonFiles.test(filePath);
       const [extension] = filePath.split(".").reverse();
       return !filePath.startsWith(".")
         && allowedExtensions.includes(extension)
