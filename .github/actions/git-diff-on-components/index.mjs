@@ -2,7 +2,7 @@ import { readFile } from "fs/promises";
 import core from "@actions/core";
 import { exec } from "@actions/exec";
 
-console.log("Action version 0.0.3");
+console.log("Action version 0.0.4");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -11,6 +11,7 @@ const allFiles = core.getInput("all_files");
 console.log("baseCommit", baseCommit);
 console.log("headCommit", headCommit);
 console.log("allFiles", allFiles);
+console.log("typeof(allFiles)", typeof(allFiles));
 
 const allowedExtensions = ["js", "mjs", "ts"];
 const componentJSFiles = new RegExp("^.*components\/.*\/sources|actions\/.*\.[t|j|mj]s$");
