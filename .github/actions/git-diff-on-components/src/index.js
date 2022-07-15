@@ -122,8 +122,6 @@ async function run() {
     
     const pendingComponentFilePaths = componentsThatDidNotModifyVersion.concat(uncommitedComponentsThatDidNotModifyVersion);
 
-    console.log("pendingComponentFilePaths", pendingComponentFilePaths);
-
     pendingComponentFilePaths.forEach((filePath) => {
       console.log(`You didn't modify the version of ${filePath}`);
     });
