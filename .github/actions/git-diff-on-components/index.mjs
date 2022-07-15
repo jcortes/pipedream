@@ -1,6 +1,7 @@
 import { readFile } from "fs/promises";
 import core from "@actions/core";
 import { exec } from "@actions/exec";
+import difference from "lodash.difference";
 
 const allowedExtensions = ["js", "mjs", "ts"];
 const componentFiles = new RegExp("^.*components\/.*\/sources|actions\/.*\.[t|j|mj]s$");
@@ -34,7 +35,6 @@ async function execCmd(...args) {
 }
 
 function getFilteredFilePaths({ allFilePaths = [], allowOtherFiles } = {}) {
-  console.log("allowOtherFiles", allowOtherFiles);
   return allFilePaths
     .filter((filePath) => {
       const otherFilesCheck =
@@ -42,18 +42,9 @@ function getFilteredFilePaths({ allFilePaths = [], allowOtherFiles } = {}) {
           ? commonFiles.test(filePath) || otherFiles.test(filePath)
           : componentFiles.test(filePath) && !commonFiles.test(filePath);
           const [extension] = filePath.split(".").reverse();
-      const validation = !filePath.startsWith(".")
+      return !filePath.startsWith(".")
         && allowedExtensions.includes(extension)
         && otherFilesCheck;
-      console.log(
-        "filePath",
-        filePath,
-        !filePath.startsWith("."),
-        allowedExtensions.includes(extension),
-        componentFiles.test(filePath),
-        otherFilesCheck
-      );
-      return validation;
     });
 }
 
@@ -91,14 +82,16 @@ function getUnmodifiedComponents(diffsContent) {
 
 async function run() {
   try {
-    const filteredWithCommonFilePaths = getFilteredFilePaths({ allFilePaths: allFiles, allowOtherFiles: true });
     const filteredFilePaths = getFilteredFilePaths({ allFilePaths: allFiles });
     const filesContent = await getFilesContent(filteredFilePaths);
     const diffsContent = await getDiffsContent(filesContent);
     const componentsThatDidNotModifyVersion = getUnmodifiedComponents(diffsContent);
 
+    const filteredWithOtherFilePaths = getFilteredFilePaths({ allFilePaths: allFiles, allowOtherFiles: true });
+    const otherFiles = difference(filteredWithOtherFilePaths, filteredFilePaths);
     console.log("filteredFilePaths", filteredFilePaths);
-    console.log("filteredWithCommonFilePaths", filteredWithCommonFilePaths);
+    console.log("filteredWithCommonFilePaths", filteredWithOtherFilePaths);
+    console.log("otherFiles", otherFiles);
 
     componentsThatDidNotModifyVersion.forEach((filePath) => {
       console.log(`You didn't modify the version of ${filePath}`);
