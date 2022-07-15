@@ -1,7 +1,11 @@
+import { fileURLToPath } from "url";
 import { readFile } from "fs/promises";
 import core from "@actions/core";
 import { exec } from "@actions/exec";
 import difference from "lodash.difference";
+import dependencyTree from "dependency-tree";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 const allowedExtensions = ["js", "mjs", "ts"];
 const componentFiles = new RegExp("^.*components\/.*\/sources|actions\/.*\.[t|j|mj]s$");
@@ -91,12 +95,21 @@ async function run() {
     const filteredFilePaths = getFilteredFilePaths({ allFilePaths: allFiles });
     const filteredWithOtherFilePaths = getFilteredFilePaths({ allFilePaths: allFiles, allowOtherFiles: true });
     const otherFiles = difference(filteredWithOtherFilePaths, filteredFilePaths);
+
     const componentsThatDidNotModifyVersion = await processFiles(filteredFilePaths);
 
     console.log("filteredFilePaths", filteredFilePaths);
     console.log("filteredWithCommonFilePaths", filteredWithOtherFilePaths);
     console.log("otherFiles", otherFiles);
-    console.log("filteredFilePaths.concat(otherFiles)", filteredFilePaths.concat(otherFiles));
+
+    otherFiles.forEach((filePath, idx) => {
+      const tree = dependencyTree({
+        directory: __dirname,
+        filename: filePath,
+        filter: path => path.indexOf("node_modules") === -1,
+      });
+      console.log(`Tree [${idx}]`, tree);
+    });
 
     componentsThatDidNotModifyVersion.forEach((filePath) => {
       console.log(`You didn't modify the version of ${filePath}`);
