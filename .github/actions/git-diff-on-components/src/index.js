@@ -118,6 +118,21 @@ async function run() {
       console.log(filePath, tree);
     });
 
+    const filesToCheck =
+      otherFiles.reduce((reduction, filePath) => {
+        const tree =
+          dependencyTree
+            .toList({
+              directory: __dirname,
+              filename: filePath,
+              filter: path => path.indexOf("node_modules") === -1
+            })
+            .filter(path => path.indexOf(filePath) === -1);
+        return reduction.concat(difference(tree, reduction));
+      }, []);
+
+    console.log("filesToCheck", filesToCheck);
+
     componentsThatDidNotModifyVersion.forEach((filePath) => {
       console.log(`You didn't modify the version of ${filePath}`);
     });
