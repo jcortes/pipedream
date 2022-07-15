@@ -15,4 +15,4 @@ outputs:
     description: "List of file paths of components that did not modify version"
 runs:
   using: "node16"
-  main: "dist/index.mjs"
+  main: "dist/index.js"
