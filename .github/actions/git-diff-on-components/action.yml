@@ -11,7 +11,7 @@ inputs:
     description: "List of all files comming from changed_files step in check_version job github action workflow"
     required: true
 outputs:
-  components_that_did_not_modify_version:
+  pending_component_file_paths:
     description: "List of file paths of components that did not modify version"
 runs:
   using: "node16"

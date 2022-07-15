@@ -49,9 +49,9 @@ function getFilteredFilePaths({ allFilePaths = [], allowOtherFiles } = {}) {
     });
 }
 
-async function getFilesContent(filteredFilePaths = []) {
+async function getFilesContent(filePaths = []) {
   const contentFilesPromises =
-    filteredFilePaths
+    filePaths
       .map(async (filePath) => ({
         filePath,
         contents: await readFile(filePath, "utf-8")
@@ -68,80 +68,71 @@ async function getDiffsContent(filesContent = []) {
         const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
         return {
           filePath,
-          diffContent: await execCmd("git", args)
+          contents: await execCmd("git", args)
         };
       });
 
   return Promise.all(diffContentPromises);
 }
 
-function getUnmodifiedComponents(diffsContent) {
-  return diffsContent
-    .filter(({ diffContent }) => !diffContent.includes("version:"))
+function getUnmodifiedComponents({ contents = [], uncommited } = {}) {
+  return contents
+    .filter(({ contents }) =>
+      uncommited
+        ? contents.includes("version:")
+        : !contents.includes("version:"))
     .map(({ filePath }) => filePath);
 }
 
-async function processFiles(filePaths) {
+async function processFiles({ filePaths = [], uncommited } = {}) {
+  if (uncommited) {
+    const filesContent = await getFilesContent(filePaths);
+    return getUnmodifiedComponents({ contents: filesContent, uncommited });
+  }
+
   const filesContent = await getFilesContent(filePaths);
   const diffsContent = await getDiffsContent(filesContent);
-  return getUnmodifiedComponents(diffsContent);
+  return getUnmodifiedComponents({ contents: diffsContent });
+
 }
 
-function processTree(tree = {}) {
-  return Object.entries(tree)
-    .reduce((reduction, [rootFile, leaf]) => {
-      
-      return Object.keys(leaf).length
-        ? processTree(leaf)
-        : reduction.concat(rootFile);
-    }, []);
+function getPendingFilePaths(filePaths = []) {
+  return filePaths.reduce((reduction, filePath) => {
+    const tree =
+      dependencyTree
+        .toList({
+          directory: __dirname,
+          filename: filePath,
+          filter: path => path.indexOf("node_modules") === -1
+        })
+        .filter(path => path.indexOf(filePath) === -1);
+    return reduction.concat(difference(tree, reduction));
+  }, []);
 }
 
 async function run() {
   try {
     const filteredFilePaths = getFilteredFilePaths({ allFilePaths: allFiles });
+    const componentsThatDidNotModifyVersion = await processFiles({ filePaths: filteredFilePaths });
+
     const filteredWithOtherFilePaths = getFilteredFilePaths({ allFilePaths: allFiles, allowOtherFiles: true });
     const otherFiles = difference(filteredWithOtherFilePaths, filteredFilePaths);
+    const pendingFilesToCheck = getPendingFilePaths(otherFiles);
+    const uncommitedComponentsThatDidNotModifyVersion = await processFiles({ filePaths: pendingFilesToCheck, uncommited: true });
+    
+    const pendingComponentFilePaths = componentsThatDidNotModifyVersion.concat(uncommitedComponentsThatDidNotModifyVersion);
 
-    const componentsThatDidNotModifyVersion = await processFiles(filteredFilePaths);
+    console.log("pendingComponentFilePaths", pendingComponentFilePaths);
 
-    // console.log("filteredFilePaths", filteredFilePaths);
-    // console.log("filteredWithCommonFilePaths", filteredWithOtherFilePaths);
-    // console.log("otherFiles", otherFiles);
-
-    otherFiles.forEach((filePath) => {
-      const tree = dependencyTree.toList({
-        directory: __dirname,
-        filename: filePath,
-        filter: path => path.indexOf("node_modules") === -1
-      }).filter(path => path.indexOf(filePath) === -1);
-      console.log(filePath, tree);
-    });
-
-    const filesToCheck =
-      otherFiles.reduce((reduction, filePath) => {
-        const tree =
-          dependencyTree
-            .toList({
-              directory: __dirname,
-              filename: filePath,
-              filter: path => path.indexOf("node_modules") === -1
-            })
-            .filter(path => path.indexOf(filePath) === -1);
-        return reduction.concat(difference(tree, reduction));
-      }, []);
-
-    console.log("filesToCheck", filesToCheck);
-
-    componentsThatDidNotModifyVersion.forEach((filePath) => {
+    pendingComponentFilePaths.forEach((filePath) => {
       console.log(`You didn't modify the version of ${filePath}`);
     });
 
-    if (componentsThatDidNotModifyVersion.length) {
+    if (pendingComponentFilePaths.length) {
       core.setFailed("You need to increment the version on some components. Please see the output above and https://pipedream.com/docs/components/guidelines/#versioning for more information");
     }
 
-    core.setOutput("components_that_did_not_modify_version", componentsThatDidNotModifyVersion);
+    core.setOutput("pending_component_file_paths", pendingComponentFilePaths);
   
   } catch (error) {
     core.setFailed(error.message);
