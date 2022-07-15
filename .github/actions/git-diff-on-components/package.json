@@ -5,7 +5,7 @@
   "main": "dist/index.mjs",
   "scripts": {
     "clean": "rm -rf ./dist",
-    "build": "npm run clean && ncc build index.mjs --license licenses.txt"
+    "build": "npm run clean && ncc build index.js --license licenses.txt"
   },
   "keywords": [],
   "author": "pipedream",

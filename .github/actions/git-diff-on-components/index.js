@@ -1,4 +1,4 @@
-const { fileURLToPath } = require("url");
+// const { fileURLToPath } = require("url");
 const { readFile } = require("fs/promises");
 const core = require("@actions/core");
 const { exec } = require("@actions/exec");
