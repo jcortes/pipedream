@@ -80,18 +80,23 @@ function getUnmodifiedComponents(diffsContent) {
     .map(({ filePath }) => filePath);
 }
 
+async function processFiles(filePaths) {
+  const filesContent = await getFilesContent(filePaths);
+  const diffsContent = await getDiffsContent(filesContent);
+  return getUnmodifiedComponents(diffsContent);
+}
+
 async function run() {
   try {
     const filteredFilePaths = getFilteredFilePaths({ allFilePaths: allFiles });
-    const filesContent = await getFilesContent(filteredFilePaths);
-    const diffsContent = await getDiffsContent(filesContent);
-    const componentsThatDidNotModifyVersion = getUnmodifiedComponents(diffsContent);
-
     const filteredWithOtherFilePaths = getFilteredFilePaths({ allFilePaths: allFiles, allowOtherFiles: true });
     const otherFiles = difference(filteredWithOtherFilePaths, filteredFilePaths);
+    const componentsThatDidNotModifyVersion = await processFiles(filteredFilePaths);
+
     console.log("filteredFilePaths", filteredFilePaths);
     console.log("filteredWithCommonFilePaths", filteredWithOtherFilePaths);
     console.log("otherFiles", otherFiles);
+    console.log("filteredFilePaths.concat(otherFiles)", filteredFilePaths.concat(otherFiles));
 
     componentsThatDidNotModifyVersion.forEach((filePath) => {
       console.log(`You didn't modify the version of ${filePath}`);
