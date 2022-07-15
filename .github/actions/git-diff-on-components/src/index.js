@@ -1,11 +1,8 @@
-// const { fileURLToPath } = require("url");
 const { readFile } = require("fs/promises");
 const core = require("@actions/core");
 const { exec } = require("@actions/exec");
 const difference = require("lodash.difference");
 const dependencyTree = require("dependency-tree");
-
-// const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 const allowedExtensions = ["js", "mjs", "ts"];
 const componentFiles = new RegExp("^.*components\/.*\/sources|actions\/.*\.[t|j|mj]s$");
@@ -90,6 +87,16 @@ async function processFiles(filePaths) {
   return getUnmodifiedComponents(diffsContent);
 }
 
+function processTree(tree = {}) {
+  return Object.entries(tree)
+    .reduce((reduction, [rootFile, leaf]) => {
+      
+      return Object.keys(leaf).length
+        ? processTree(leaf)
+        : reduction.concat(rootFile);
+    }, []);
+}
+
 async function run() {
   try {
     const filteredFilePaths = getFilteredFilePaths({ allFilePaths: allFiles });
@@ -98,9 +105,9 @@ async function run() {
 
     const componentsThatDidNotModifyVersion = await processFiles(filteredFilePaths);
 
-    console.log("filteredFilePaths", filteredFilePaths);
-    console.log("filteredWithCommonFilePaths", filteredWithOtherFilePaths);
-    console.log("otherFiles", otherFiles);
+    // console.log("filteredFilePaths", filteredFilePaths);
+    // console.log("filteredWithCommonFilePaths", filteredWithOtherFilePaths);
+    // console.log("otherFiles", otherFiles);
 
     otherFiles.forEach((filePath, idx) => {
       const tree = dependencyTree({
@@ -108,7 +115,13 @@ async function run() {
         filename: filePath,
         filter: path => path.indexOf("node_modules") === -1,
       });
+      const treeList = dependencyTree.toList({
+        directory: __dirname,
+        filename: filePath,
+        filter: path => path.indexOf("node_modules") === -1,
+      });
       console.log(`Tree [${idx}]`, tree);
+      console.log(`Tree [${idx}]`, treeList);
     });
 
     componentsThatDidNotModifyVersion.forEach((filePath) => {
