@@ -109,19 +109,13 @@ async function run() {
     // console.log("filteredWithCommonFilePaths", filteredWithOtherFilePaths);
     // console.log("otherFiles", otherFiles);
 
-    otherFiles.forEach((filePath, idx) => {
-      const tree = dependencyTree({
+    otherFiles.forEach((filePath) => {
+      const tree = dependencyTree.toList({
         directory: __dirname,
         filename: filePath,
-        filter: path => path.indexOf("node_modules") === -1,
+        filter: path => path.indexOf("node_modules") === -1 || path.indexOf(filePath) === -1
       });
-      const treeList = dependencyTree.toList({
-        directory: __dirname,
-        filename: filePath,
-        filter: path => path.indexOf("node_modules") === -1,
-      });
-      console.log(`Tree [${idx}]`, tree);
-      console.log(`Tree [${idx}]`, treeList);
+      console.log(filePath, tree);
     });
 
     componentsThatDidNotModifyVersion.forEach((filePath) => {

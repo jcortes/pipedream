@@ -1,6 +1,9 @@
 import { createReadStream } from "fs";
 import FormData from "form-data";
 import { ConfigurationError } from "@pipedream/platform";
+import constants from "./constants.mjs";
+
+console.log(constants.BASE_URL);
 
 function addProperty({
   src, validation, addition,
