@@ -1,11 +1,11 @@
-import { fileURLToPath } from "url";
-import { readFile } from "fs/promises";
-import core from "@actions/core";
-import { exec } from "@actions/exec";
-import difference from "lodash.difference";
+const { fileURLToPath } = require("url");
+const { readFile } = require("fs/promises");
+const core = require("@actions/core");
+const { exec } = require("@actions/exec");
+const difference = require("lodash.difference");
 const dependencyTree = require("dependency-tree");
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
+// const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 const allowedExtensions = ["js", "mjs", "ts"];
 const componentFiles = new RegExp("^.*components\/.*\/sources|actions\/.*\.[t|j|mj]s$");
