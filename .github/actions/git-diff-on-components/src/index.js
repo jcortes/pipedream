@@ -106,6 +106,7 @@ function getPendingFilePaths(filePaths = []) {
           filter: path => path.indexOf("node_modules") === -1
         })
         .filter(path => path.indexOf(filePath) === -1);
+    console.log(filePath, tree);
     return reduction.concat(difference(tree, reduction));
   }, []);
 }
@@ -118,7 +119,6 @@ async function run() {
     const filteredWithOtherFilePaths = getFilteredFilePaths({ allFilePaths: allFiles, allowOtherFiles: true });
     const otherFiles = difference(filteredWithOtherFilePaths, filteredFilePaths);
     const pendingFilesToCheck = getPendingFilePaths(otherFiles);
-    console.log("pendingFilesToCheck", pendingFilesToCheck);
     const uncommitedComponentsThatDidNotModifyVersion = await processFiles({ filePaths: pendingFilesToCheck, uncommited: true });
     
     const pendingComponentFilePaths = componentsThatDidNotModifyVersion.concat(uncommitedComponentsThatDidNotModifyVersion);
