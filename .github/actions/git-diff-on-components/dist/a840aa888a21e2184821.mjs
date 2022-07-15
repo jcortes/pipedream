@@ -3,7 +3,7 @@ import { readFile } from "fs/promises";
 import core from "@actions/core";
 import { exec } from "@actions/exec";
 import difference from "lodash.difference";
-import dependencyTree from "dependency-tree";
+const dependencyTree = require("dependency-tree");
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
