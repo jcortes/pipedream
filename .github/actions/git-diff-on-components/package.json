@@ -4,7 +4,7 @@
   "description": "Git diff on components",
   "main": "dist/index.mjs",
   "scripts": {
-    "build": "ncc build index.mjs --license licenses.txt"
+    "build": "ncc build index.mjs --license licenses.txt -m"
   },
   "keywords": [],
   "author": "pipedream",
