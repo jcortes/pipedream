@@ -1,4 +1,4 @@
-const { readFile } = require("fs/promises");
+const { readFile, readdir } = require("fs/promises");
 const core = require("@actions/core");
 const { exec } = require("@actions/exec");
 const difference = require("lodash.difference");
@@ -138,4 +138,9 @@ async function run() {
   }
 }
 
-run();
+async function run2() {
+  const apps = await readdir(`${__dirname}/components`);
+  console.log("apps", apps);
+}
+
+run2();
