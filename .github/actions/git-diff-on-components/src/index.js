@@ -139,8 +139,9 @@ async function run() {
 }
 
 async function run2() {
-  const apps = await readdir(`${__dirname}/components`);
+  const apps = await readdir(`${__dirname}/../../../../components`);
   console.log("apps", apps);
 }
 
-run2();
+run2()
+  .catch(error => core.setFailed(error ?? error?.message));
