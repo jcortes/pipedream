@@ -8,6 +8,7 @@ const allowedExtensions = ["js", "mjs", "ts"];
 const componentFiles = new RegExp("^.*components\/.*\/sources|actions\/.*\.[t|j|mj]s$");
 const commonFiles = new RegExp("^.*common.*\.[t|j|mj]s$");
 const otherFiles = new RegExp("^.*components\/.*\.[t|j|mj]s$");
+const extensionsRegExp = new RegExp("\.[t|j|mj]s$");
 
 const baseCommit = core.getInput("base_commit");
 const headCommit = core.getInput("head_commit");
@@ -111,37 +112,57 @@ function getPendingFilePaths(filePaths = []) {
   }, []);
 }
 
+async function deepReadDir (dirPath) {
+  return Promise.all(
+    (await readdir(dirPath))
+      .map(async (entity) => {
+        const path = join(dirPath, entity)
+        return (await lstat(path)).isDirectory() ? await deepReadDir(path) : ({ dirPath, path });
+      }),
+  )
+  .then((result) =>
+    result
+      .flat(Number.POSITIVE_INFINITY)
+      .filter(({ path }) => !path.includes("node_modules") && extensionsRegExp.test(path))
+      .map(({ path }) => path));
+}
+
 async function run() {
-  try {
-    const filteredFilePaths = getFilteredFilePaths({ allFilePaths: allFiles });
-    const componentsThatDidNotModifyVersion = await processFiles({ filePaths: filteredFilePaths });
+  const filteredFilePaths = getFilteredFilePaths({ allFilePaths: allFiles });
+  const componentsThatDidNotModifyVersion = await processFiles({ filePaths: filteredFilePaths });
 
-    const filteredWithOtherFilePaths = getFilteredFilePaths({ allFilePaths: allFiles, allowOtherFiles: true });
-    const otherFiles = difference(filteredWithOtherFilePaths, filteredFilePaths);
-    const pendingFilesToCheck = getPendingFilePaths(otherFiles);
-    const uncommitedComponentsThatDidNotModifyVersion = await processFiles({ filePaths: pendingFilesToCheck, uncommited: true });
-    
-    const pendingComponentFilePaths = componentsThatDidNotModifyVersion.concat(uncommitedComponentsThatDidNotModifyVersion);
+  componentsThatDidNotModifyVersion.forEach((filePath) => {
+    console.log(`You didn't modify the version of ${filePath}`);
+  });
 
-    pendingComponentFilePaths.forEach((filePath) => {
-      console.log(`You didn't modify the version of ${filePath}`);
-    });
-
-    if (pendingComponentFilePaths.length) {
-      core.setFailed("You need to increment the version on some components. Please see the output above and https://pipedream.com/docs/components/guidelines/#versioning for more information");
-    }
-
-    core.setOutput("pending_component_file_paths", pendingComponentFilePaths);
-  
-  } catch (error) {
-    core.setFailed(error.message);
+  if (componentsThatDidNotModifyVersion.length) {
+    core.setFailed("You need to increment the version on some components. Please see the output above and https://pipedream.com/docs/components/guidelines/#versioning for more information");
   }
+
+  const filteredWithOtherFilePaths = getFilteredFilePaths({ allFilePaths: allFiles, allowOtherFiles: true });
+  const otherFiles = difference(filteredWithOtherFilePaths, filteredFilePaths);
+  // const pendingFilesToCheck = getPendingFilePaths(otherFiles);
+  // const uncommitedComponentsThatDidNotModifyVersion = await processFiles({ filePaths: pendingFilesToCheck, uncommited: true });
+  // const pendingComponentFilePaths = componentsThatDidNotModifyVersion.concat(uncommitedComponentsThatDidNotModifyVersion);
+  if (otherFiles.length) {
+    console.log("Need to check each component in the repo and compare with otherFiles array");
+    console.log("otherFiles", otherFiles);
+    await run2();
+  }
+
+  core.setOutput("pending_component_file_paths", pendingComponentFilePaths);
 }
 
 async function run2() {
-  const apps = await readdir(`${__dirname}/../../../../components`);
-  console.log("apps", apps);
+  const componentsPath = `${__dirname}/../../../../components`;
+  const appPaths = await readdir(componentsPath);
+  // console.log("appPaths", appPaths);
+  const allFilePaths = await Promise.all(
+    appPaths.reduce(async (reduction, appPath) =>
+      reduction.concat(await deepReadDir(appPath)), [])
+  );
+  console.log("allFilePaths", allFilePaths);
 }
 
-run2()
+run()
   .catch(error => core.setFailed(error ?? error?.message));
