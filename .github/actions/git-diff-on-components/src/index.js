@@ -151,7 +151,7 @@ async function run() {
     await run2();
   }
 
-  core.setOutput("pending_component_file_paths", pendingComponentFilePaths);
+  core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
 }
 
 async function run2() {
