@@ -128,11 +128,11 @@ async function deepReadDir (dirPath) {
     return result
       .flat(Number.POSITIVE_INFINITY)
       .filter((entity) => {
-        const path = Array.isArray(path) ? path[0] : entity.path;
+        const path = Array.isArray(entity) ? entity[0] : entity.path;
         return !path.includes("node_modules") && extensionsRegExp.test(path);
       })
       .map((entity) => {
-        const path = Array.isArray(path) ? path[0] : entity.path;
+        const path = Array.isArray(entity) ? entity[0] : entity.path;
         return path;
       });
   });
