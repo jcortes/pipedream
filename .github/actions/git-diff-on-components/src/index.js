@@ -118,25 +118,25 @@ async function deepReadDir (dirPath) {
     (await readdir(dirPath))
       .map(async (entity) => {
         const path = join(dirPath, entity);
-        return (await lstat(path)).isDirectory()
+        const isDir = (await lstat(path)).isDirectory();
+        return isDir
           ? await deepReadDir(path)
           : { dirPath, path };
       }),
-  )
-  .then((result) => {
-    // console.log("result", result);
-    return result
-      .flat(Number.POSITIVE_INFINITY)
-      .filter((entity) => {
-        console.log("typeof(entity)", typeof(entity));
-        const path = typeof(entity) === "string" ? entity : entity.path;
-        return !path.includes("node_modules") && extensionsRegExp.test(path);
-      })
-      .map((entity) => {
-        const path = typeof(entity) === "string" ? entity : entity.path;
-        return path;
-      });
-  });
+  );
+  // .then((result) => {
+  //   return result
+  //     .flat(Number.POSITIVE_INFINITY)
+  //     .filter((entity) => {
+  //       console.log("typeof(entity)", typeof(entity));
+  //       const path = typeof(entity) === "string" ? entity : entity.path;
+  //       return !path.includes("node_modules") && extensionsRegExp.test(path);
+  //     })
+  //     .map((entity) => {
+  //       const path = typeof(entity) === "string" ? entity : entity.path;
+  //       return path;
+  //     });
+  // });
 }
 
 async function run() {
