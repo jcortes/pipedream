@@ -157,13 +157,25 @@ async function run() {
 async function run2() {
   const componentsPath = join(__dirname, "/../../../../components");
   const apps = await readdir(componentsPath);
-  const allFilePaths = await Promise.all(
-    apps.reduce(async (reduction, app) => {
-      const result = await deepReadDir(join(componentsPath ,app));
-      console.log("reduction", reduction);
-      return reduction.concat(result);
-    }, [])
-  );
+  const allFilePaths =
+    await Promise.all(
+      apps.maps((app) =>
+        deepReadDir(join(componentsPath ,app)))
+    );
+
+  // const allFilePaths = apps.reduce(async (reduction, app) => {
+  //   const result = await deepReadDir(join(componentsPath ,app));
+  //   console.log("reduction", reduction);
+  //   return reduction.concat(result);
+  // }, []);
+
+  // const allFilePaths = await Promise.all(
+  //   apps.reduce(async (reduction, app) => {
+  //     const result = await deepReadDir(join(componentsPath ,app));
+  //     console.log("reduction", reduction);
+  //     return reduction.concat(result);
+  //   }, [])
+  // );
   console.log("allFilePaths", allFilePaths);
 }
 
