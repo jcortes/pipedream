@@ -158,8 +158,11 @@ async function run2() {
   const componentsPath = join(__dirname, "/../../../../components");
   const apps = await readdir(componentsPath);
   const allFilePaths = await Promise.all(
-    apps.reduce(async (reduction, app) => 
-      reduction.concat(await deepReadDir(join(componentsPath ,app))), [])
+    apps.reduce(async (reduction, app) => {
+      const result = await deepReadDir(join(componentsPath ,app));
+      console.log("result", result);
+      return reduction.concat(result);
+    }, [])
   );
   console.log("allFilePaths", allFilePaths);
 }
