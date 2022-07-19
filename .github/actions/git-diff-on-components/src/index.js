@@ -121,11 +121,13 @@ async function deepReadDir (dirPath) {
         return (await lstat(path)).isDirectory() ? await deepReadDir(path) : ({ dirPath, path });
       }),
   )
-  .then((result) =>
-    result
+  .then((result) => {
+    console.log("result", result);
+    return result
       .flat(Number.POSITIVE_INFINITY)
       .filter(({ path }) => !path?.includes("node_modules") && extensionsRegExp.test(path))
-      .map(({ path }) => path));
+      .map(({ path }) => path);
+  });
 }
 
 async function run() {
@@ -159,8 +161,7 @@ async function run2() {
   const apps = await readdir(componentsPath);
   const allFilePaths =
     await Promise.all(
-      apps.map((app) =>
-        deepReadDir(join(componentsPath ,app)))
+      apps.map((app) => deepReadDir(join(componentsPath ,app)))
     );
 
   // const allFilePaths = apps.reduce(async (reduction, app) => {
@@ -176,7 +177,7 @@ async function run2() {
   //     return reduction.concat(result);
   //   }, [])
   // );
-  console.log("allFilePaths", allFilePaths);
+  console.log("allFilePaths", JSON.stringify(allFilePaths));
 }
 
 run()
