@@ -160,7 +160,7 @@ async function run2() {
   const allFilePaths = await Promise.all(
     apps.reduce(async (reduction, app) => {
       const result = await deepReadDir(join(componentsPath ,app));
-      console.log("result", result);
+      console.log("reduction", reduction);
       return reduction.concat(result);
     }, [])
   );
