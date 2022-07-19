@@ -117,16 +117,24 @@ async function deepReadDir (dirPath) {
   return Promise.all(
     (await readdir(dirPath))
       .map(async (entity) => {
-        const path = join(dirPath, entity)
-        return (await lstat(path)).isDirectory() ? await deepReadDir(path) : ({ dirPath, path });
+        const path = join(dirPath, entity);
+        return (await lstat(path)).isDirectory()
+          ? await deepReadDir(path)
+          : { dirPath, path };
       }),
   )
   .then((result) => {
-    console.log("result", result);
+    // console.log("result", result);
     return result
       .flat(Number.POSITIVE_INFINITY)
-      .filter(({ path }) => !path?.includes("node_modules") && extensionsRegExp.test(path))
-      .map(({ path }) => path);
+      .filter((entity) => {
+        const path = Array.isArray(path) ? path[0] : entity.path;
+        return !path.includes("node_modules") && extensionsRegExp.test(path);
+      })
+      .map((entity) => {
+        const path = Array.isArray(path) ? path[0] : entity.path;
+        return path;
+      });
   });
 }
 
