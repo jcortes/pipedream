@@ -159,7 +159,7 @@ async function run2() {
   const apps = await readdir(componentsPath);
   const allFilePaths =
     await Promise.all(
-      apps.maps((app) =>
+      apps.map((app) =>
         deepReadDir(join(componentsPath ,app)))
     );
 
