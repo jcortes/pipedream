@@ -124,7 +124,7 @@ async function deepReadDir (dirPath) {
   .then((result) =>
     result
       .flat(Number.POSITIVE_INFINITY)
-      .filter(({ path }) => !path.includes("node_modules") && extensionsRegExp.test(path))
+      .filter(({ path }) => !path?.includes("node_modules") && extensionsRegExp.test(path))
       .map(({ path }) => path));
 }
 
