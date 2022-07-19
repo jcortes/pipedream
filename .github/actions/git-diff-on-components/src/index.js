@@ -1,3 +1,4 @@
+const { join } = require("path");
 const { readFile, readdir } = require("fs/promises");
 const core = require("@actions/core");
 const { exec } = require("@actions/exec");
@@ -154,12 +155,15 @@ async function run() {
 }
 
 async function run2() {
-  const componentsPath = `${__dirname}/../../../../components`;
+  const componentsPath = join(__dirname, "/../../../../components");
+  console.log("componentsPath", componentsPath);
   const appPaths = await readdir(componentsPath);
   // console.log("appPaths", appPaths);
   const allFilePaths = await Promise.all(
-    appPaths.reduce(async (reduction, appPath) =>
-      reduction.concat(await deepReadDir(appPath)), [])
+    appPaths.reduce(async (reduction, appPath) => {
+      console.log("appPath", appPath);
+      return reduction.concat(await deepReadDir(appPath));
+    }, [])
   );
   console.log("allFilePaths", allFilePaths);
 }
