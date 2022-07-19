@@ -128,6 +128,7 @@ async function deepReadDir (dirPath) {
     return result
       .flat(Number.POSITIVE_INFINITY)
       .filter((entity) => {
+        console.log("entity", entity);
         const path = Array.isArray(entity) ? entity[0] : entity.path;
         return !path.includes("node_modules") && extensionsRegExp.test(path);
       })
