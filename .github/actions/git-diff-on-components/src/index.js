@@ -156,13 +156,12 @@ async function run() {
 
 async function run2() {
   const componentsPath = join(__dirname, "/../../../../components");
-  console.log("componentsPath", componentsPath);
   const appPaths = await readdir(componentsPath);
-  // console.log("appPaths", appPaths);
   const allFilePaths = await Promise.all(
     appPaths.reduce(async (reduction, appPath) => {
-      console.log("appPath", appPath);
-      return reduction.concat(await deepReadDir(appPath));
+      const result = await deepReadDir(appPath);
+      console.log("result", result);
+      return reduction.concat(result);
     }, [])
   );
   console.log("allFilePaths", allFilePaths);
