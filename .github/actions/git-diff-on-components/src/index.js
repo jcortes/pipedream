@@ -1,5 +1,5 @@
 const { join } = require("path");
-const { readFile, readdir } = require("fs/promises");
+const { readFile, readdir, lstat } = require("fs/promises");
 const core = require("@actions/core");
 const { exec } = require("@actions/exec");
 const difference = require("lodash.difference");
