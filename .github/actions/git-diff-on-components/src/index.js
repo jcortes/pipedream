@@ -186,7 +186,16 @@ async function run2() {
   //     return reduction.concat(result);
   //   }, [])
   // );
-  console.log("allFilePaths", JSON.stringify(allFilePaths));
+
+  // console.log("allFilePaths", JSON.stringify(allFilePaths));
+
+  const res =
+    allFilePaths
+      .flat(Number.POSITIVE_INFINITY)
+      .filter(({ path }) => !path.includes("node_modules") && extensionsRegExp.test(path))
+      .map(({ path }) => path);
+  
+  console.log("res", JSON.stringify(res));
 }
 
 run()
