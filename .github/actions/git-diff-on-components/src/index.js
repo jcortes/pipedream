@@ -122,21 +122,18 @@ async function deepReadDir (dirPath) {
         return isDir
           ? await deepReadDir(path)
           : { dirPath, path };
-      }),
+      })
   );
-  // .then((result) => {
-  //   return result
-  //     .flat(Number.POSITIVE_INFINITY)
-  //     .filter((entity) => {
-  //       console.log("typeof(entity)", typeof(entity));
-  //       const path = typeof(entity) === "string" ? entity : entity.path;
-  //       return !path.includes("node_modules") && extensionsRegExp.test(path);
-  //     })
-  //     .map((entity) => {
-  //       const path = typeof(entity) === "string" ? entity : entity.path;
-  //       return path;
-  //     });
-  // });
+}
+
+async function getAllFilePaths({ componentsPath, apps = [] } = {}) {
+  return Promise.all(apps.map((app) => deepReadDir(join(componentsPath ,app))))
+    .then((result) =>
+      result
+        .flat(Number.POSITIVE_INFINITY)
+        .filter(({ path }) => !path.includes("node_modules") && extensionsRegExp.test(path))
+        .map(({ path }) => path)
+    );
 }
 
 async function run() {
@@ -168,34 +165,8 @@ async function run() {
 async function run2() {
   const componentsPath = join(__dirname, "/../../../../components");
   const apps = await readdir(componentsPath);
-  const allFilePaths =
-    await Promise.all(
-      apps.map((app) => deepReadDir(join(componentsPath ,app)))
-    );
-
-  // const allFilePaths = apps.reduce(async (reduction, app) => {
-  //   const result = await deepReadDir(join(componentsPath ,app));
-  //   console.log("reduction", reduction);
-  //   return reduction.concat(result);
-  // }, []);
-
-  // const allFilePaths = await Promise.all(
-  //   apps.reduce(async (reduction, app) => {
-  //     const result = await deepReadDir(join(componentsPath ,app));
-  //     console.log("reduction", reduction);
-  //     return reduction.concat(result);
-  //   }, [])
-  // );
-
-  // console.log("allFilePaths", JSON.stringify(allFilePaths));
-
-  const res =
-    allFilePaths
-      .flat(Number.POSITIVE_INFINITY)
-      .filter(({ path }) => !path.includes("node_modules") && extensionsRegExp.test(path))
-      .map(({ path }) => path);
-  
-  console.log("res", JSON.stringify(res));
+  const allFilePaths = await getAllFilePaths([ componentsPath, apps ]);
+  console.log("allFilePaths", JSON.stringify(allFilePaths));
 }
 
 run()
