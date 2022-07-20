@@ -142,7 +142,7 @@ function reduceResult(result) {
     if (Array.isArray(leaf)) {
       return {
         ...reduction,
-        ...readTree(leaf)
+        ...reduceResult(leaf)
       };
     }
     if (leaf.dirPath.includes("node_modules") || !extensionsRegExp.test(leaf.path)) {
