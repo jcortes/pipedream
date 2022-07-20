@@ -159,6 +159,17 @@ function reduceResult(result) {
     }, {});
 }
 
+function getDependencyFilesOnly(allFilePaths) {
+  return Object.entries(allFilePaths)
+    .filter(([, paths]) => paths.length > 1)
+    .reduce((reduction, [key, paths]) => {
+      return {
+        ...reduction,
+        [key]: paths
+      };
+    }, {});
+}
+
 async function run() {
   const filteredFilePaths = getFilteredFilePaths({ allFilePaths: allFiles });
   const componentsThatDidNotModifyVersion = await processFiles({ filePaths: filteredFilePaths });
@@ -183,7 +194,8 @@ async function run() {
     const componentsPath = join(__dirname, "/../../../../components");
     const apps = await readdir(componentsPath);
     const allFilePaths = await getAllFilePaths({ componentsPath, apps });
-    console.log("allFilePaths", JSON.stringify(allFilePaths));
+    const dependencyFilesOnly = getDependencyFilesOnly(allFilePaths);
+    console.log("allFilePaths", JSON.stringify(dependencyFilesOnly));
   }
 
   core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
