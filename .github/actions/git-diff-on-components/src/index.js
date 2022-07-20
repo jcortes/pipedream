@@ -127,7 +127,7 @@ async function deepReadDir (dirPath) {
 
 async function getAllFilePaths({ componentsPath, apps = [] } = {}) {
   return Promise.all(apps.map((app) => deepReadDir(join(componentsPath ,app))))
-    .then(flattenResult);
+    .then(reduceResult);
 }
 
 function flattenResult(result) {
