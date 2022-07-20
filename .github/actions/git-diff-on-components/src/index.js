@@ -150,8 +150,13 @@ function reduceResult(result) {
     }
     const [, componentPath] = leaf.dirPath.split("/components/");
     const [key] = componentPath.split("/");
-    console.log("key", key);
     const currentPaths = reduction[key] ?? [];
+
+    if (key === "activecampaign") {
+      console.log("currentPaths", currentPaths);
+      console.log("path", leaf.path);
+    }
+
     return {
       ...reduction,
       [key]: [
