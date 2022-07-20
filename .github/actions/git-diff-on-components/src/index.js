@@ -127,7 +127,10 @@ async function deepReadDir (dirPath) {
 
 async function getAllFilePaths({ componentsPath, apps = [] } = {}) {
   return Promise.all(apps.map((app) => deepReadDir(join(componentsPath ,app))))
-    .then(reduceResult);
+    .then((result) => {
+      console.log("result", JSON.stringify(result));
+      return reduceResult(result);
+    });
 }
 
 function flattenResult(result) {
@@ -140,9 +143,6 @@ function flattenResult(result) {
 function reduceResult(tree) {
   return tree.reduce((reduction, leaf) => {
     if (Array.isArray(leaf)) {
-      if (leaf.find((path) => path.includes("activecampaign"))) {
-        console.log("leaf", leaf);
-      }
       return {
         ...reduction,
         ...reduceResult(leaf)
@@ -155,10 +155,10 @@ function reduceResult(tree) {
     const [key] = componentPath.split("/");
     const currentPaths = reduction[key] ?? [];
 
-    if (key === "activecampaign") {
-      console.log("currentPaths", currentPaths);
-      console.log("path", leaf.path);
-    }
+    // if (key === "activecampaign") {
+    //   console.log("currentPaths", currentPaths);
+    //   console.log("path", leaf.path);
+    // }
 
     return {
       ...reduction,
@@ -194,7 +194,7 @@ async function run() {
     const componentsPath = join(__dirname, "/../../../../components");
     const apps = await readdir(componentsPath);
     const allFilePaths = await getAllFilePaths({ componentsPath, apps });
-    console.log("allFilePaths v2", JSON.stringify(allFilePaths));
+    // console.log("allFilePaths v2", JSON.stringify(allFilePaths));
   }
 
   core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
