@@ -148,16 +148,13 @@ function reduceResult(result) {
     if (leaf.dirPath.includes("node_modules") || !extensionsRegExp.test(leaf.path)) {
       return reduction;
     }
-    const [rootPath, componentPath] = leaf.dirPath.split("/components/");
-    const [componentName] = componentPath.split("/");
-    const key = `${rootPath}/${componentName}`;
-
-    // const keyFound = Object.keys(reduction).find((key) => leaf.dirPath.includes(key));
-    // const key = keyFound ?? leaf.dirPath;
+    const [, componentPath] = leaf.dirPath.split("/components/");
+    const [key] = componentPath.split("/");
+    console.log("key", key);
     return {
       ...reduction,
       [key]: [
-        ...(reduction[key] || []),
+        ...reduction[key],
         leaf.path
       ]
     };
