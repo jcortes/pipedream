@@ -151,10 +151,11 @@ function reduceResult(result) {
     const [, componentPath] = leaf.dirPath.split("/components/");
     const [key] = componentPath.split("/");
     console.log("key", key);
+    const currentPaths = reduction[key] ?? [];
     return {
       ...reduction,
       [key]: [
-        ...reduction[key],
+        ...currentPaths,
         leaf.path
       ]
     };
