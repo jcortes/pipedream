@@ -127,10 +127,7 @@ async function deepReadDir (dirPath) {
 
 async function getAllFilePaths({ componentsPath, apps = [] } = {}) {
   return Promise.all(apps.map((app) => deepReadDir(join(componentsPath ,app))))
-    .then((result) => {
-      console.log("result", JSON.stringify(result));
-      return reduceResult(result);
-    });
+    .then(reduceResult);
 }
 
 function flattenResult(result) {
@@ -140,34 +137,26 @@ function flattenResult(result) {
     .map(({ path }) => path);
 }
 
-function reduceResult(tree) {
-  return tree.reduce((reduction, leaf) => {
-    if (Array.isArray(leaf)) {
+function reduceResult(result) {
+  return result
+    .flat(Number.POSITIVE_INFINITY)
+    .reduce((reduction, { dirPath, path }) => {
+      if (dirPath.includes("node_modules") || !extensionsRegExp.test(path)) {
+        return reduction;
+      }
+
+      const [, componentPath] = dirPath.split("/components/");
+      const [key] = componentPath.split("/");
+      const currentPaths = reduction[key] ?? [];
+
       return {
         ...reduction,
-        ...reduceResult(leaf)
+        [key]: [
+          ...currentPaths,
+          path
+        ]
       };
-    }
-    if (leaf.dirPath.includes("node_modules") || !extensionsRegExp.test(leaf.path)) {
-      return reduction;
-    }
-    const [, componentPath] = leaf.dirPath.split("/components/");
-    const [key] = componentPath.split("/");
-    const currentPaths = reduction[key] ?? [];
-
-    // if (key === "activecampaign") {
-    //   console.log("currentPaths", currentPaths);
-    //   console.log("path", leaf.path);
-    // }
-
-    return {
-      ...reduction,
-      [key]: [
-        ...currentPaths,
-        leaf.path
-      ]
-    };
-  }, {});
+    }, {});
 }
 
 async function run() {
