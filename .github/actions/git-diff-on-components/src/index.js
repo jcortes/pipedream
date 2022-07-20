@@ -149,10 +149,11 @@ function reduceResult(result) {
       return reduction;
     }
     const keyFound = Object.keys(reduction).find((key) => leaf.dirPath.includes(key));
+    const key = keyFound ?? leaf.dirPath;
     return {
       ...reduction,
-      [keyFound ?? leaf.dirPath]: [
-        ...(reduction[leaf.dirPath] || []),
+      [key]: [
+        ...(reduction[key] || []),
         leaf.path
       ]
     };
