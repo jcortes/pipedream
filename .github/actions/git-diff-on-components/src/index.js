@@ -137,9 +137,12 @@ function flattenResult(result) {
     .map(({ path }) => path);
 }
 
-function reduceResult(result) {
-  return result.reduce((reduction, leaf) => {
+function reduceResult(tree) {
+  return tree.reduce((reduction, leaf) => {
     if (Array.isArray(leaf)) {
+      if (leaf.find((path) => path.includes("activecampaign"))) {
+        console.log("leaf", leaf);
+      }
       return {
         ...reduction,
         ...reduceResult(leaf)
