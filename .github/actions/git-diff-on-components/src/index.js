@@ -118,8 +118,7 @@ async function deepReadDir (dirPath) {
     (await readdir(dirPath))
       .map(async (entity) => {
         const path = join(dirPath, entity);
-        const isDir = (await lstat(path)).isDirectory();
-        return isDir
+        return (await lstat(path)).isDirectory()
           ? await deepReadDir(path)
           : { dirPath, path };
       })
@@ -128,12 +127,35 @@ async function deepReadDir (dirPath) {
 
 async function getAllFilePaths({ componentsPath, apps = [] } = {}) {
   return Promise.all(apps.map((app) => deepReadDir(join(componentsPath ,app))))
-    .then((result) =>
-      result
-        .flat(Number.POSITIVE_INFINITY)
-        .filter(({ path }) => !path.includes("node_modules") && extensionsRegExp.test(path))
-        .map(({ path }) => path)
-    );
+    .then(flattenResult);
+}
+
+function flattenResult(result) {
+  return result
+    .flat(Number.POSITIVE_INFINITY)
+    .filter(({ path }) => !path.includes("node_modules") && extensionsRegExp.test(path))
+    .map(({ path }) => path);
+}
+
+function reduceResult(result) {
+  return result.reduce((reduction, leaf) => {
+    if (Array.isArray(leaf)) {
+      return {
+        ...reduction,
+        ...readTree(leaf)
+      };
+    }
+    if (leaf.dirPath.includes("node_modules") || !extensionsRegExp.test(leaf.path)) {
+      return reduction;
+    }
+    return {
+      ...reduction,
+      [leaf.dirPath]: [
+        ...(reduction[leaf.dirPath] || []),
+        leaf.path
+      ]
+    };
+  }, {});
 }
 
 async function run() {
@@ -156,17 +178,14 @@ async function run() {
   if (otherFiles.length) {
     console.log("Need to check each component in the repo and compare with otherFiles array");
     console.log("otherFiles", otherFiles);
-    await run2();
+
+    const componentsPath = join(__dirname, "/../../../../components");
+    const apps = await readdir(componentsPath);
+    const allFilePaths = await getAllFilePaths({ componentsPath, apps });
+    console.log("allFilePaths", JSON.stringify(allFilePaths));
   }
 
   core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
-}
-
-async function run2() {
-  const componentsPath = join(__dirname, "/../../../../components");
-  const apps = await readdir(componentsPath);
-  const allFilePaths = await getAllFilePaths({ componentsPath, apps });
-  console.log("allFilePaths", JSON.stringify(allFilePaths));
 }
 
 run()
