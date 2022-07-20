@@ -148,9 +148,10 @@ function reduceResult(result) {
     if (leaf.dirPath.includes("node_modules") || !extensionsRegExp.test(leaf.path)) {
       return reduction;
     }
+    const keyFound = Object.keys(reduction).find((key) => leaf.dirPath.includes(key));
     return {
       ...reduction,
-      [leaf.dirPath]: [
+      [keyFound ?? leaf.dirPath]: [
         ...(reduction[leaf.dirPath] || []),
         leaf.path
       ]
