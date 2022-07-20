@@ -165,7 +165,7 @@ async function run() {
 async function run2() {
   const componentsPath = join(__dirname, "/../../../../components");
   const apps = await readdir(componentsPath);
-  const allFilePaths = await getAllFilePaths([ componentsPath, apps ]);
+  const allFilePaths = await getAllFilePaths({ componentsPath, apps });
   console.log("allFilePaths", JSON.stringify(allFilePaths));
 }
 
