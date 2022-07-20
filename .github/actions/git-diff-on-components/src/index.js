@@ -183,7 +183,7 @@ async function run() {
     const componentsPath = join(__dirname, "/../../../../components");
     const apps = await readdir(componentsPath);
     const allFilePaths = await getAllFilePaths({ componentsPath, apps });
-    // console.log("allFilePaths v2", JSON.stringify(allFilePaths));
+    console.log("allFilePaths", JSON.stringify(allFilePaths));
   }
 
   core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
