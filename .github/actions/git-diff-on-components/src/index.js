@@ -168,7 +168,7 @@ function reduceResult(result) {
     }, {});
 }
 
-function getDependencyFilesOnly(allFilePaths) {
+function getDependencyFilesDict(allFilePaths) {
   return Object.entries(allFilePaths)
     .filter(([, paths]) => paths.length > 1)
     .reduce((reduction, [key, paths]) => {
@@ -177,6 +177,67 @@ function getDependencyFilesOnly(allFilePaths) {
         [key]: paths
       };
     }, {});
+}
+
+function getComponentsDependencies({ filePaths, dependencyFilesDict }) {
+  const componentNames = uniqWith(filePaths, isEqualComponent).map(getComponentName);
+  return componentNames.map((componentName) => {
+    const selectedFilePaths = dependencyFilesDict[componentName];
+    return selectedFilePaths.map((selectedFilePath) => {
+      const [directory, newFilePath] = selectedFilePath.split("components/");
+      const filename = `components/${newFilePath}`;
+      const dependencies = dependencyTree
+        .toList({
+          directory,
+          filename,
+          filter: path => path.indexOf("node_modules") === -1
+        })
+        .filter(path => path.indexOf(filename) === -1);
+      return {
+        filePath: selectedFilePath,
+        dependencies,
+      };
+    });
+  }).flat(Number.POSITIVE_INFINITY);
+}
+
+function getAffectedFilesByDependency(componentsDependencies) {
+  return componentsDependencies.reduce((mainReduction, { filePath, dependencies }) => {
+    const nextReduction = dependencies.reduce((reductionDep, filePathDep) => {
+      const currentDepPaths = reductionDep[filePathDep] || [];
+      return {
+        ...reductionDep,
+        [filePathDep]: [
+          ...currentDepPaths,
+          filePath
+        ]
+      };
+    }, {});
+
+    const finalReduction = Object.entries(mainReduction)
+      .reduce((reductionMerge, [mainFilePath, mainDependencies]) => {
+        const nextReductionDependencies = nextReduction[mainFilePath];
+        if (nextReductionDependencies) {
+          return {
+            ...reductionMerge,
+            [mainFilePath]: [
+              ...mainDependencies,
+              ...nextReductionDependencies
+            ]
+          };
+        }
+        return {
+          ...reductionMerge,
+          [mainFilePath]: mainDependencies
+        };
+      }, {});
+
+    return {
+      ...mainReduction,
+      ...nextReduction,
+      ...finalReduction
+    };
+  }, {});
 }
 
 async function run() {
@@ -203,30 +264,10 @@ async function run() {
     const componentsPath = join(__dirname, "/../../../../components");
     const apps = await readdir(componentsPath);
     const allFilePaths = await getAllFilePaths({ componentsPath, apps });
-    const dependencyFilesOnly = getDependencyFilesOnly(allFilePaths);
-    // console.log("allFilePaths", JSON.stringify(dependencyFilesOnly));
+    const dependencyFilesDict = getDependencyFilesDict(allFilePaths);
+    const componentsDependencies = getComponentsDependencies({ filePaths: otherFiles, dependencyFilesDict });
 
-    const appNames = uniqWith(otherFiles, isEqualComponent).map(getComponentName);
-    const appTrees = appNames.map((appName) => {
-      const selectedFilePaths = dependencyFilesOnly[appName];
-      return selectedFilePaths.map((selectedFilePath) => {
-        const [directory, newFilePath] = selectedFilePath.split("components/");
-        const filename = `components/${newFilePath}`;
-        const dependencies = dependencyTree
-          .toList({
-            directory,
-            filename,
-            filter: path => path.indexOf("node_modules") === -1
-          })
-          .filter(path => path.indexOf(filename) === -1);
-        return {
-          filePath: selectedFilePath,
-          dependencies,
-        };
-      });
-    });
-
-    console.log("appTrees", JSON.stringify(appTrees.flat(Number.POSITIVE_INFINITY)));
+    console.log("componentsDependencies", JSON.stringify(componentsDependencies));
   }
 
   core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
