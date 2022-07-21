@@ -138,7 +138,7 @@ function flattenResult(result) {
 }
 
 function getComponentName(dirPath) {
-  const [, componentPath] = dirPath.split("/components/");
+  const [, componentPath] = dirPath.split("components/");
   const [componentName] = componentPath.split("/");
   return componentName;
 }
@@ -200,7 +200,7 @@ async function run() {
     const apps = await readdir(componentsPath);
     const allFilePaths = await getAllFilePaths({ componentsPath, apps });
     const dependencyFilesOnly = getDependencyFilesOnly(allFilePaths);
-    console.log("allFilePaths", JSON.stringify(dependencyFilesOnly));
+    // console.log("allFilePaths", JSON.stringify(dependencyFilesOnly));
 
     otherFiles.forEach((filePath) => {
       const componentName = getComponentName(filePath);
