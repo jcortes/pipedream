@@ -205,24 +205,23 @@ async function run() {
     otherFiles.forEach((filePath) => {
       const componentName = getComponentName(filePath);
       const selectedFilePaths = dependencyFilesOnly[componentName];
-      console.log("selectedFilePaths", selectedFilePaths);
-      // const out = selectedFilePaths.reduce((reduction, selectedFilePath) => {
-      //   const [directory, newFilePath] = selectedFilePath.split("/components/");
-      //   const filename = `components/${newFilePath}`;
-      //   console.log("directory", directory);
-      //   console.log("filename", filename);
-      //   const tree =
-      //     dependencyTree
-      //       .toList({
-      //         directory,
-      //         filename,
-      //         filter: path => path.indexOf("node_modules") === -1
-      //       })
-      //       .filter(path => path.indexOf(filePath) === -1);
-      //   // console.log(filePath, tree);
-      //   return reduction.concat(difference(tree, reduction));
-      // }, []);
-      // console.log(JSON.stringify(out));
+      const out = selectedFilePaths.reduce((reduction, selectedFilePath) => {
+        const [directory, newFilePath] = selectedFilePath.split("components/");
+        const filename = `components/${newFilePath}`;
+        console.log("directory", directory);
+        console.log("filename", filename);
+        const tree =
+          dependencyTree
+            .toList({
+              directory,
+              filename,
+              filter: path => path.indexOf("node_modules") === -1
+            })
+            .filter(path => path.indexOf(filePath) === -1);
+        // console.log(filePath, tree);
+        return reduction.concat(difference(tree, reduction));
+      }, []);
+      console.log(JSON.stringify(out));
     });
   }
 
