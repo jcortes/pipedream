@@ -212,19 +212,21 @@ async function run() {
       return selectedFilePaths.map((selectedFilePath) => {
         const [directory, newFilePath] = selectedFilePath.split("components/");
         const filename = `components/${newFilePath}`;
-        const tree = dependencyTree
+        const dependencies = dependencyTree
           .toList({
             directory,
             filename,
             filter: path => path.indexOf("node_modules") === -1
-          });
+          })
+          .filter(path => path.indexOf(filename) === -1);
         return {
           filePath: selectedFilePath,
-          tree,
+          dependencies,
         };
       });
     });
-    console.log("appTrees", JSON.stringify(appTrees));
+
+    console.log("appTrees", JSON.stringify(appTrees.flat(Number.POSITIVE_INFINITY)));
   }
 
   core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
