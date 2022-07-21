@@ -2,8 +2,9 @@ const { join } = require("path");
 const { readFile, readdir, lstat } = require("fs/promises");
 const core = require("@actions/core");
 const { exec } = require("@actions/exec");
-const difference = require("lodash.difference");
 const dependencyTree = require("dependency-tree");
+const difference = require("lodash.difference");
+const uniqWith = require('lodash.uniqwith');
 
 const allowedExtensions = ["js", "mjs", "ts"];
 const componentFiles = new RegExp("^.*components\/.*\/sources|actions\/.*\.[t|j|mj]s$");
@@ -142,6 +143,9 @@ function getComponentName(dirPath) {
   const [componentName] = componentPath.split("/");
   return componentName;
 }
+function isEqualComponent(filePath, otherFilePath) {
+  return getComponentName(filePath) === getComponentName(otherFilePath);
+}
 
 function reduceResult(result) {
   return result
@@ -202,27 +206,25 @@ async function run() {
     const dependencyFilesOnly = getDependencyFilesOnly(allFilePaths);
     // console.log("allFilePaths", JSON.stringify(dependencyFilesOnly));
 
-    otherFiles.forEach((filePath) => {
-      const componentName = getComponentName(filePath);
-      const selectedFilePaths = dependencyFilesOnly[componentName];
-      const out = selectedFilePaths.reduce((reduction, selectedFilePath) => {
+    const appNames = uniqWith(otherFiles, isEqualComponent).map(getComponentName);
+    const appTrees = appNames.map((appName) => {
+      const selectedFilePaths = dependencyFilesOnly[appName];
+      return selectedFilePaths.map((selectedFilePath) => {
         const [directory, newFilePath] = selectedFilePath.split("components/");
         const filename = `components/${newFilePath}`;
-        console.log("directory", directory);
-        console.log("filename", filename);
-        const tree =
-          dependencyTree
-            .toList({
-              directory,
-              filename,
-              filter: path => path.indexOf("node_modules") === -1
-            })
-            .filter(path => path.indexOf(filePath) === -1);
-        // console.log(filePath, tree);
-        return reduction.concat(difference(tree, reduction));
-      }, []);
-      console.log(JSON.stringify(out));
+        const tree = dependencyTree
+          .toList({
+            directory,
+            filename,
+            filter: path => path.indexOf("node_modules") === -1
+          });
+        return {
+          filePath: selectedFilePath,
+          tree,
+        };
+      });
     });
+    console.log("appTrees", JSON.stringify(appTrees));
   }
 
   core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
