@@ -137,6 +137,12 @@ function flattenResult(result) {
     .map(({ path }) => path);
 }
 
+function getComponentName(dirPath) {
+  const [, componentPath] = dirPath.split("/components/");
+  const [componentName] = componentPath.split("/");
+  return componentName;
+}
+
 function reduceResult(result) {
   return result
     .flat(Number.POSITIVE_INFINITY)
@@ -145,8 +151,7 @@ function reduceResult(result) {
         return reduction;
       }
 
-      const [, componentPath] = dirPath.split("/components/");
-      const [key] = componentPath.split("/");
+      const key = getComponentName(dirPath);
       const currentPaths = reduction[key] ?? [];
 
       return {
@@ -196,6 +201,28 @@ async function run() {
     const allFilePaths = await getAllFilePaths({ componentsPath, apps });
     const dependencyFilesOnly = getDependencyFilesOnly(allFilePaths);
     console.log("allFilePaths", JSON.stringify(dependencyFilesOnly));
+
+    otherFiles.forEach((filePath) => {
+      const componentName = getComponentName(filePath);
+      const selectedFilePaths = dependencyFilesOnly[componentName];
+      const out = selectedFilePaths.reduce((reduction, selectedFilePath) => {
+        const [directory, newFilePath] = selectedFilePath.split("/components/");
+        const filename = `components/${newFilePath}`;
+        console.log("directory", directory);
+        console.log("filename", filename);
+        const tree =
+          dependencyTree
+            .toList({
+              directory,
+              filename,
+              filter: path => path.indexOf("node_modules") === -1
+            })
+            .filter(path => path.indexOf(filePath) === -1);
+        // console.log(filePath, tree);
+        return reduction.concat(difference(tree, reduction));
+      }, []);
+      console.log(JSON.stringify(out));
+    });
   }
 
   core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
