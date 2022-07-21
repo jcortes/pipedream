@@ -266,8 +266,9 @@ async function run() {
     const allFilePaths = await getAllFilePaths({ componentsPath, apps });
     const dependencyFilesDict = getDependencyFilesDict(allFilePaths);
     const componentsDependencies = getComponentsDependencies({ filePaths: otherFiles, dependencyFilesDict });
+    const affectedFilesByDependency = getAffectedFilesByDependency(componentsDependencies);
 
-    console.log("componentsDependencies", JSON.stringify(componentsDependencies));
+    console.log("affectedFilesByDependency", JSON.stringify(affectedFilesByDependency));
   }
 
   core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
