@@ -96,7 +96,6 @@ async function processFiles({ filePaths = [], uncommited } = {}) {
   const filesContent = await getFilesContent(filePaths);
   const diffsContent = await getDiffsContent(filesContent);
   return getUnmodifiedComponents({ contents: diffsContent });
-
 }
 
 function getPendingFilePaths(filePaths = []) {
@@ -201,7 +200,7 @@ function getComponentsDependencies({ filePaths, dependencyFilesDict }) {
   }).flat(Number.POSITIVE_INFINITY);
 }
 
-function getAffectedFilesByDependency(componentsDependencies) {
+function getFilesToBeCheckByDependency(componentsDependencies) {
   return componentsDependencies.reduce((mainReduction, { filePath, dependencies }) => {
     const nextReduction = dependencies.reduce((reductionDep, filePathDep) => {
       const currentDepPaths = reductionDep[filePathDep] || [];
@@ -240,6 +239,23 @@ function getAffectedFilesByDependency(componentsDependencies) {
   }, {});
 }
 
+function getComponentsThatNeedToBeModified(filesToBeCheckedByDependency) {
+  return Object.entries(filesToBeCheckedByDependency)
+    .reduce(async (reduction, [filePath, filesToBeChecked]) => {
+      const found = otherFiles.find((path) => filePath.includes(path));
+      if (found) {
+        const newFilePaths = await processFiles({ filePaths: filesToBeChecked, uncommited: true });
+        return newFilePaths.length
+          ? Promise.resolve({
+            ...await reduction,
+            [filePath]: newFilePaths
+          })
+          : await reduction;
+      }
+      return await reduction;
+    }, Promise.resolve({}));
+}
+
 async function run() {
   const filteredFilePaths = getFilteredFilePaths({ allFilePaths: allFiles });
   const componentsThatDidNotModifyVersion = await processFiles({ filePaths: filteredFilePaths });
@@ -266,9 +282,11 @@ async function run() {
     const allFilePaths = await getAllFilePaths({ componentsPath, apps });
     const dependencyFilesDict = getDependencyFilesDict(allFilePaths);
     const componentsDependencies = getComponentsDependencies({ filePaths: otherFiles, dependencyFilesDict });
-    const affectedFilesByDependency = getAffectedFilesByDependency(componentsDependencies);
+    const filesToBeCheckedByDependency = getFilesToBeCheckByDependency(componentsDependencies);
+    const componentsThatNeedToBeModified = await getComponentsThatNeedToBeModified(filesToBeCheckedByDependency);
 
-    console.log("affectedFilesByDependency", JSON.stringify(affectedFilesByDependency));
+    console.log("filesToBeCheckedByDependency", JSON.stringify(filesToBeCheckedByDependency));
+    console.log("componentsThatNeedToBeModified", JSON.stringify(componentsThatNeedToBeModified));
   }
 
   core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
