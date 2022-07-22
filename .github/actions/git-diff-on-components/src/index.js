@@ -239,7 +239,7 @@ function getFilesToBeCheckByDependency(componentsDependencies) {
   }, {});
 }
 
-function getComponentsThatNeedToBeModified(filesToBeCheckedByDependency) {
+function getComponentsThatNeedToBeModified({ filesToBeCheckedByDependency, otherFiles }) {
   return Object.entries(filesToBeCheckedByDependency)
     .reduce(async (reduction, [filePath, filesToBeChecked]) => {
       const found = otherFiles.find((path) => filePath.includes(path));
@@ -283,7 +283,7 @@ async function run() {
     const dependencyFilesDict = getDependencyFilesDict(allFilePaths);
     const componentsDependencies = getComponentsDependencies({ filePaths: otherFiles, dependencyFilesDict });
     const filesToBeCheckedByDependency = getFilesToBeCheckByDependency(componentsDependencies);
-    const componentsThatNeedToBeModified = await getComponentsThatNeedToBeModified(filesToBeCheckedByDependency);
+    const componentsThatNeedToBeModified = await getComponentsThatNeedToBeModified({ filesToBeCheckedByDependency, otherFiles });
 
     console.log("filesToBeCheckedByDependency", JSON.stringify(filesToBeCheckedByDependency));
     console.log("componentsThatNeedToBeModified", JSON.stringify(componentsThatNeedToBeModified));
