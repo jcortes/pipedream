@@ -6,7 +6,6 @@ const dependencyTree = require("dependency-tree");
 const difference = require("lodash.difference");
 const uniqWith = require('lodash.uniqwith');
 
-const allowedExtensions = ["js", "mjs", "ts"];
 const componentFiles = new RegExp("^.*components\/.*\/sources|actions\/.*\.[t|j|mj]s$");
 const commonFiles = new RegExp("^.*common.*\.[t|j|mj]s$");
 const otherFiles = new RegExp("^.*components\/.*\.[t|j|mj]s$");
@@ -50,9 +49,8 @@ function getFilteredFilePaths({ allFilePaths = [], allowOtherFiles } = {}) {
         allowOtherFiles
           ? commonFiles.test(filePath) || otherFiles.test(filePath)
           : componentFiles.test(filePath) && !commonFiles.test(filePath);
-          const [extension] = filePath.split(".").reverse();
       return !filePath.startsWith(".")
-        && allowedExtensions.includes(extension)
+        && extensionsRegExp.test(filePath)
         && otherFilesCheck;
     });
 }
@@ -284,22 +282,12 @@ async function checkVersionModification(componentsPendingForGitDiff) {
 }
 
 async function run() {
+  let componentsDiffContents = [];
   const filteredFilePaths = getFilteredFilePaths({ allFilePaths: allFiles });
   const existingFilePaths = await getExistingFilePaths(filteredFilePaths);
   const componentsThatDidNotModifyVersion = await processFiles({ filePaths: existingFilePaths });
-
-  // componentsThatDidNotModifyVersion.forEach((filePath) => {
-  //   console.log(`You didn't modify the version of ${filePath}`);
-  // });
-
-  // if (componentsThatDidNotModifyVersion.length) {
-  //   core.setFailed("You need to increment the version on some components. Please see the output above and https://pipedream.com/docs/components/guidelines/#versioning for more information");
-  // }
-
   const filteredWithOtherFilePaths = getFilteredFilePaths({ allFilePaths: allFiles, allowOtherFiles: true });
   const otherFiles = difference(filteredWithOtherFilePaths, existingFilePaths);
-
-  let componentsDiffContents = [];
 
   if (otherFiles.length) {
     const componentsPath = join(__dirname, "/../../../../components");
