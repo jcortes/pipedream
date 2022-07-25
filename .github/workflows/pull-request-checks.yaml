@@ -33,27 +33,12 @@ jobs:
         name: Get changed files
         with:
           format: json
-      # Diff the changes in the HEAD ref (new branch) against the BASE ref (target branch, e.g. master)
-      # If the changes don't contain modifications to the version, we want to log that fact but not exit early
-      # Once we've checked all files, exit the script if any files failed to modify version
-      # - id: git_diff_on_components
-      #   name: Check git diff for version changes
-      #   env:
-      #     head_commit: ${{ github.event.pull_request.head.sha }}
-      #     base_commit: ${{ github.event.pull_request.base.sha }}
-      #   run: ./scripts/git_diff_on_components.sh
-      # - name: Check git diff for version changes
-      #   uses: ./.github/actions/git-diff-on-components
-      #   with:
-      #     all_files: ${{ steps.changed_files.outputs.all }}
-      #     base_commit: ${{ github.event.pull_request.base.sha }}
-      #     head_commit: ${{ github.event.pull_request.head.sha }}
       - name: Check git diff for version changes
-        env:
-          head_commit: ${{ github.event.pull_request.head.sha }}
+        uses: ./.github/actions/git-diff-on-components
+        with:
+          all_files: ${{ steps.changed_files.outputs.all }}
           base_commit: ${{ github.event.pull_request.base.sha }}
-        run: ./scripts/gitDiffOnComponents.js
-        
+          head_commit: ${{ github.event.pull_request.head.sha }}
 
   spellcheck:
     name: Spellcheck
@@ -114,7 +99,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install -r
       - name: Setup Node Env
-        uses: actions/setup-node@v3.3.0
+        uses: actions/setup-node@v3.4.1
         with:
           node-version: 14
           registry-url: https://registry.npmjs.org/
@@ -154,7 +139,7 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-      - uses: actions/setup-node@v3.3.0
+      - uses: actions/setup-node@v3.4.1
         with:
           node-version: 14
           registry-url: https://registry.npmjs.org/
@@ -189,7 +174,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - name: Setup Node Env
-        uses: actions/setup-node@v3.3.0
+        uses: actions/setup-node@v3.4.1
         with:
           node-version: 14
           registry-url: https://registry.npmjs.org/
