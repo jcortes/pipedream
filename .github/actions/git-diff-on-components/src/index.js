@@ -186,11 +186,11 @@ function getDependencyFilesDict(allFilePaths) {
 }
 
 function getComponentsDependencies({ filePaths, dependencyFilesDict }) {
-  console.log("getComponentsDependencies start");
   const componentNames = uniqWith(filePaths, isEqualComponent).map(getComponentName);
-  console.log("componentNames");
+  console.log("componentNames", JSON.stringify(componentNames));
   return componentNames.map((componentName) => {
     const selectedFilePaths = dependencyFilesDict[componentName];
+    console.log("componentName", componentName);
     console.log("typeof(selectedFilePaths)", typeof(selectedFilePaths));
     return selectedFilePaths.map((selectedFilePath) => {
       const [directory, newFilePath] = selectedFilePath.split("components/");
@@ -297,7 +297,7 @@ async function run() {
     const apps = await readdir(componentsPath);
     const allFilePaths = await getAllFilePaths({ componentsPath, apps });
     const dependencyFilesDict = getDependencyFilesDict(allFilePaths);
-    console.log("dependencyFilesDict", JSON.stringify(dependencyFilesDict));
+    // console.log("dependencyFilesDict", JSON.stringify(dependencyFilesDict));
     const componentsDependencies = getComponentsDependencies({ filePaths: otherFiles, dependencyFilesDict });
     console.log("componentsDependencies");
     const filesToBeCheckedByDependency = getFilesToBeCheckByDependency(componentsDependencies);
