@@ -263,6 +263,14 @@ function getComponentsThatNeedToBeModified({ filesToBeCheckedByDependency, other
     }, Promise.resolve({}));
 }
 
+function getComponentsPendingForGitDiff(componentsThatNeedToBeModified) {
+  return Object.entries(componentsThatNeedToBeModified)
+    .map(([filePath, componentFilePaths]) =>
+      componentFilePaths.map((componentFilePath) =>
+        ({ filePath, componentFilePath })))
+    .flat(Number.POSITIVE_INFINITY);
+}
+
 async function checkVersionModification(componentsPendingForGitDiff) {
   const output = await Promise.all(
     componentsPendingForGitDiff
@@ -280,20 +288,20 @@ async function run() {
   const existingFilePaths = await getExistingFilePaths(filteredFilePaths);
   const componentsThatDidNotModifyVersion = await processFiles({ filePaths: existingFilePaths });
 
-  componentsThatDidNotModifyVersion.forEach((filePath) => {
-    console.log(`You didn't modify the version of ${filePath}`);
-  });
+  // componentsThatDidNotModifyVersion.forEach((filePath) => {
+  //   console.log(`You didn't modify the version of ${filePath}`);
+  // });
 
-  if (componentsThatDidNotModifyVersion.length) {
-    core.setFailed("You need to increment the version on some components. Please see the output above and https://pipedream.com/docs/components/guidelines/#versioning for more information");
-  }
+  // if (componentsThatDidNotModifyVersion.length) {
+  //   core.setFailed("You need to increment the version on some components. Please see the output above and https://pipedream.com/docs/components/guidelines/#versioning for more information");
+  // }
 
   const filteredWithOtherFilePaths = getFilteredFilePaths({ allFilePaths: allFiles, allowOtherFiles: true });
   const otherFiles = difference(filteredWithOtherFilePaths, existingFilePaths);
 
-  if (otherFiles.length) {
-    console.log("otherFiles", otherFiles);
+  let componentsDiffContents = [];
 
+  if (otherFiles.length) {
     const componentsPath = join(__dirname, "/../../../../components");
     const apps = await readdir(componentsPath);
     const allFilePaths = await getAllFilePaths({ componentsPath, apps });
@@ -301,16 +309,22 @@ async function run() {
     const componentsDependencies = getComponentsDependencies({ filePaths: otherFiles, dependencyFilesDict });
     const filesToBeCheckedByDependency = getFilesToBeCheckByDependency(componentsDependencies);
     const componentsThatNeedToBeModified = await getComponentsThatNeedToBeModified({ filesToBeCheckedByDependency, otherFiles });
+    const componentsPendingForGitDiff = getComponentsPendingForGitDiff(componentsThatNeedToBeModified);
+    componentsDiffContents = await checkVersionModification(componentsPendingForGitDiff);
+  }
 
-    const componentsPendingForGitDiff =
-      Object.entries(componentsThatNeedToBeModified)
-        .map(([filePath, componentFilePaths]) =>
-          componentFilePaths.map((componentFilePath) =>
-            ({ filePath, componentFilePath })))
-        .flat(Number.POSITIVE_INFINITY);
+  if (componentsThatDidNotModifyVersion.length) {
+    core.setFailed("You need to increment the version on some components. Please see the output above and https://pipedream.com/docs/components/guidelines/#versioning for more information");
+    componentsThatDidNotModifyVersion.forEach((filePath) => {
+      console.log(`You didn't modify the version of ${filePath}`);
+    });
+  }
 
-    const componentsDiffContents = await checkVersionModification(componentsPendingForGitDiff);
-    console.log("componentsDiffContents", JSON.stringify(componentsDiffContents));
+  if (componentsDiffContents.length) {
+    core.setFailed("You need to increment the version on some components that have dependencies on other files.");
+    componentsDiffContents.forEach(({ dependencyFilePath, componentFilePath }) => {
+      console.log(`Dependency file ${dependencyFilePath} was modified but the component's version in ${componentFilePath} was not`);
+    });
   }
 
   core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
