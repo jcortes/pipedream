@@ -76,8 +76,10 @@ async function getExistingFilePaths(filePaths = []) {
         exists: await fileExist(filePath)
       }));
   return Promise.all(existingFilePaths)
-    .filter(({ exists }) => exists)
-    .map(({ filePath }) => filePath);
+      .then((filePaths) =>
+        filePaths
+          .filter(({ exists }) => exists)
+          .map(({ filePath }) => filePath));
 }
 
 async function getFilesContent(filePaths = []) {
