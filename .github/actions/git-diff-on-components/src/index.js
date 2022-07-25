@@ -6,6 +6,7 @@ const dependencyTree = require("dependency-tree");
 const difference = require("lodash.difference");
 const uniqWith = require('lodash.uniqwith');
 
+const COMPONENTS_SUFFIX = "components/";
 const componentFiles = new RegExp("^.*components\/.*\/sources|actions\/.*\.[t|j|mj]s$");
 const commonFiles = new RegExp("^.*common.*\.[t|j|mj]s$");
 const otherFiles = new RegExp("^.*components\/.*\.[t|j|mj]s$");
@@ -142,7 +143,7 @@ async function getAllFilePaths({ componentsPath, apps = [] } = {}) {
 }
 
 function getComponentName(dirPath) {
-  const [, componentPath] = dirPath.split("components/");
+  const [, componentPath] = dirPath.split(COMPONENTS_SUFFIX);
   const [componentName] = componentPath.split("/");
   return componentName;
 }
@@ -188,7 +189,7 @@ function getComponentsDependencies({ filePaths, dependencyFilesDict }) {
   return componentNames.map((componentName) => {
     const selectedFilePaths = dependencyFilesDict[componentName] || [];
     return selectedFilePaths.map((selectedFilePath) => {
-      const [directory, newFilePath] = selectedFilePath.split("components/");
+      const [directory, newFilePath] = selectedFilePath.split(COMPONENTS_SUFFIX);
       const filename = `components/${newFilePath}`;
       const dependencies = dependencyTree
         .toList({
@@ -281,6 +282,11 @@ async function checkVersionModification(componentsPendingForGitDiff) {
   return output.filter(({ contents }) => contents?.length && !contents.includes("version:"));
 }
 
+function getComponentFilePath(filePath) {
+  const [, componentPath] = filePath.split(COMPONENTS_SUFFIX);
+  return `${COMPONENTS_SUFFIX}${componentPath}`;
+}
+
 async function run() {
   let componentsDiffContents = [];
   const filteredFilePaths = getFilteredFilePaths({ allFilePaths: allFiles });
@@ -311,7 +317,7 @@ async function run() {
   if (componentsDiffContents.length) {
     core.setFailed("You need to increment the version on some components that have dependencies on other files.");
     componentsDiffContents.forEach(({ dependencyFilePath, componentFilePath }) => {
-      console.log(`Dependency file ${dependencyFilePath} was modified but the component's version in ${componentFilePath} was not`);
+      console.log(`Dependency file ${getComponentFilePath(dependencyFilePath)} was modified but the component's version in ${getComponentFilePath(componentFilePath)} was not`);
     });
   }
 
