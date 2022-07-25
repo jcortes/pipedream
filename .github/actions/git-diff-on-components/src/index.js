@@ -264,14 +264,15 @@ function getComponentsThatNeedToBeModified({ filesToBeCheckedByDependency, other
 }
 
 async function checkVersionModification(componentsPendingForGitDiff) {
-  return Promise.all(
+  const output = await Promise.all(
     componentsPendingForGitDiff
       .map(async ({ filePath, componentFilePath }) => ({
-        filePath,
+        dependencyFilePath: filePath,
         componentFilePath,
         contents: await execGitDiffContents(componentFilePath)
       }))
   );
+  return output.filter(({ contents }) => contents?.length && !contents.includes("version:"));
 }
 
 async function run() {
