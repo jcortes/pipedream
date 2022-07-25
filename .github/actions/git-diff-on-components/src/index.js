@@ -38,6 +38,11 @@ async function execCmd(...args) {
   });
 }
 
+async function execGitDiffContents(filePath) {
+  const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
+  return execCmd("git", args);
+}
+
 function getFilteredFilePaths({ allFilePaths = [], allowOtherFiles } = {}) {
   return allFilePaths
     .filter((filePath) => {
@@ -68,10 +73,9 @@ async function getDiffsContent(filesContent = []) {
     filesContent
       .filter(({ contents }) => contents.includes("version:"))
       .map(async ({ filePath }) => {
-        const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
         return {
           filePath,
-          contents: await execCmd("git", args)
+          contents: await execGitDiffContents(filePath)
         };
       });
 
@@ -98,21 +102,6 @@ async function processFiles({ filePaths = [], uncommited } = {}) {
   return getUnmodifiedComponents({ contents: diffsContent });
 }
 
-function getPendingFilePaths(filePaths = []) {
-  return filePaths.reduce((reduction, filePath) => {
-    const tree =
-      dependencyTree
-        .toList({
-          directory: __dirname,
-          filename: filePath,
-          filter: path => path.indexOf("node_modules") === -1
-        })
-        .filter(path => path.indexOf(filePath) === -1);
-    console.log(filePath, tree);
-    return reduction.concat(difference(tree, reduction));
-  }, []);
-}
-
 async function deepReadDir (dirPath) {
   return Promise.all(
     (await readdir(dirPath))
@@ -130,18 +119,12 @@ async function getAllFilePaths({ componentsPath, apps = [] } = {}) {
     .then(reduceResult);
 }
 
-function flattenResult(result) {
-  return result
-    .flat(Number.POSITIVE_INFINITY)
-    .filter(({ path }) => !path.includes("node_modules") && extensionsRegExp.test(path))
-    .map(({ path }) => path);
-}
-
 function getComponentName(dirPath) {
   const [, componentPath] = dirPath.split("components/");
   const [componentName] = componentPath.split("/");
   return componentName;
 }
+
 function isEqualComponent(filePath, otherFilePath) {
   return getComponentName(filePath) === getComponentName(otherFilePath);
 }
@@ -256,6 +239,14 @@ function getComponentsThatNeedToBeModified({ filesToBeCheckedByDependency, other
     }, Promise.resolve({}));
 }
 
+async function checkVersionModification(componentsPendingForGitDiff) {
+  return componentsPendingForGitDiff
+    .map(async ({ filePath, componentFilePath }) => ({
+      filePath,
+      contents: await execGitDiffContents(componentFilePath)
+    }));
+}
+
 async function run() {
   const filteredFilePaths = getFilteredFilePaths({ allFilePaths: allFiles });
   const componentsThatDidNotModifyVersion = await processFiles({ filePaths: filteredFilePaths });
@@ -270,9 +261,7 @@ async function run() {
 
   const filteredWithOtherFilePaths = getFilteredFilePaths({ allFilePaths: allFiles, allowOtherFiles: true });
   const otherFiles = difference(filteredWithOtherFilePaths, filteredFilePaths);
-  // const pendingFilesToCheck = getPendingFilePaths(otherFiles);
-  // const uncommitedComponentsThatDidNotModifyVersion = await processFiles({ filePaths: pendingFilesToCheck, uncommited: true });
-  // const pendingComponentFilePaths = componentsThatDidNotModifyVersion.concat(uncommitedComponentsThatDidNotModifyVersion);
+
   if (otherFiles.length) {
     console.log("Need to check each component in the repo and compare with otherFiles array");
     console.log("otherFiles", otherFiles);
@@ -285,12 +274,20 @@ async function run() {
     const filesToBeCheckedByDependency = getFilesToBeCheckByDependency(componentsDependencies);
     const componentsThatNeedToBeModified = await getComponentsThatNeedToBeModified({ filesToBeCheckedByDependency, otherFiles });
 
-    Object.entries(componentsThatNeedToBeModified)
-      .forEach(([filePath, componentFilePaths]) => {
+    // console.log("componentsThatNeedToBeModified", JSON.stringify(componentsThatNeedToBeModified));
 
-      });
+    const componentsPendingForGitDiff = 
+      Object.entries(componentsThatNeedToBeModified)
+        .map(async ([filePath, componentFilePaths]) =>
+          componentFilePaths.map((componentFilePath) =>
+            ({ filePath, componentFilePath })))
+        .flat(Number.POSITIVE_INFINITY);
+    console.log("componentsPendingForGitDiff", componentsPendingForGitDiff);
 
-    console.log("componentsThatNeedToBeModified", JSON.stringify(componentsThatNeedToBeModified));
+    const componentsDiffContents = await checkVersionModification(componentsPendingForGitDiff);
+    console.log("componentsDiffContents", componentsDiffContents);
+
+    
   }
 
   core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
