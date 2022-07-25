@@ -189,7 +189,7 @@ function getComponentsDependencies({ filePaths, dependencyFilesDict }) {
   const componentNames = uniqWith(filePaths, isEqualComponent).map(getComponentName);
   console.log("componentNames", JSON.stringify(componentNames));
   return componentNames.map((componentName) => {
-    const selectedFilePaths = dependencyFilesDict[componentName];
+    const selectedFilePaths = dependencyFilesDict[componentName] || [];
     console.log("componentName", componentName);
     console.log("typeof(selectedFilePaths)", typeof(selectedFilePaths));
     return selectedFilePaths.map((selectedFilePath) => {
