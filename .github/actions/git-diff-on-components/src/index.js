@@ -187,11 +187,8 @@ function getDependencyFilesDict(allFilePaths) {
 
 function getComponentsDependencies({ filePaths, dependencyFilesDict }) {
   const componentNames = uniqWith(filePaths, isEqualComponent).map(getComponentName);
-  console.log("componentNames", JSON.stringify(componentNames));
   return componentNames.map((componentName) => {
     const selectedFilePaths = dependencyFilesDict[componentName] || [];
-    console.log("componentName", componentName);
-    console.log("typeof(selectedFilePaths)", typeof(selectedFilePaths));
     return selectedFilePaths.map((selectedFilePath) => {
       const [directory, newFilePath] = selectedFilePath.split("components/");
       const filename = `components/${newFilePath}`;
@@ -267,11 +264,13 @@ function getComponentsThatNeedToBeModified({ filesToBeCheckedByDependency, other
 }
 
 async function checkVersionModification(componentsPendingForGitDiff) {
-  return componentsPendingForGitDiff
-    .map(async ({ filePath, componentFilePath }) => ({
-      filePath,
-      contents: await execGitDiffContents(componentFilePath)
-    }));
+  return Promise.all(
+    componentsPendingForGitDiff
+      .map(async ({ filePath, componentFilePath }) => ({
+        filePath,
+        contents: await execGitDiffContents(componentFilePath)
+      }))
+  );
 }
 
 async function run() {
@@ -297,13 +296,9 @@ async function run() {
     const apps = await readdir(componentsPath);
     const allFilePaths = await getAllFilePaths({ componentsPath, apps });
     const dependencyFilesDict = getDependencyFilesDict(allFilePaths);
-    // console.log("dependencyFilesDict", JSON.stringify(dependencyFilesDict));
     const componentsDependencies = getComponentsDependencies({ filePaths: otherFiles, dependencyFilesDict });
-    console.log("componentsDependencies");
     const filesToBeCheckedByDependency = getFilesToBeCheckByDependency(componentsDependencies);
-    console.log("filesToBeCheckedByDependency");
     const componentsThatNeedToBeModified = await getComponentsThatNeedToBeModified({ filesToBeCheckedByDependency, otherFiles });
-    console.log("componentsThatNeedToBeModified");
 
     const componentsPendingForGitDiff =
       Object.entries(componentsThatNeedToBeModified)
@@ -311,7 +306,6 @@ async function run() {
           componentFilePaths.map((componentFilePath) =>
             ({ filePath, componentFilePath })))
         .flat(Number.POSITIVE_INFINITY);
-    console.log("componentsPendingForGitDiff", componentsPendingForGitDiff);
 
     const componentsDiffContents = await checkVersionModification(componentsPendingForGitDiff);
     console.log("componentsDiffContents", componentsDiffContents);
