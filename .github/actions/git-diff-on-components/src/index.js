@@ -63,15 +63,19 @@ function fileExist(filePath) {
       await lstat(filePath);
       return resolve(true);
     } catch (error) {
-      console.log("doesn't exist", filePath);
       return resolve(false);
     }
   });
 }
 
 async function getExistingFilePaths(filePaths = []) {
-  const existingFilePaths = await Promise.all(filePaths.filter(async (filePath) => await fileExist(filePath)));
-  return existingFilePaths;
+  const existingFilePaths =
+    filePaths
+      .map(async (filePath) => ({
+        filePath,
+        exists: await fileExist(filePath)
+      }));
+  return Promise.all(existingFilePaths);
 }
 
 async function getFilesContent(filePaths = []) {
