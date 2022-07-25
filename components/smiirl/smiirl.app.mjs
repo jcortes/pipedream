@@ -1,5 +1,4 @@
 import { Counter } from "@smiirl/smiirl-library-js";
-import constants from "./common/constants.mjs";
 
 export default {
   type: "app",
@@ -20,7 +19,6 @@ export default {
       return new Counter(counterId, token);
     },
     async resetCount() {
-      console.log("BASE_URL", constants.BASE_URL);
       return this.getCounter().reset();
     },
     async incrementCount(number) {

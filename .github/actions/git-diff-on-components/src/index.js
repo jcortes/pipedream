@@ -320,8 +320,6 @@ async function run() {
       console.log(`Dependency file ${getComponentFilePath(dependencyFilePath)} was modified but the component's version in ${getComponentFilePath(componentFilePath)} was not`);
     });
   }
-
-  core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
 }
 
 run()

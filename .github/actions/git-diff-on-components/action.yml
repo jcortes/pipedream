@@ -10,9 +10,6 @@ inputs:
   all_files:
     description: "List of all files comming from changed_files step in check_version job github action workflow"
     required: true
-outputs:
-  pending_component_file_paths:
-    description: "List of file paths of components that did not modify version"
 runs:
   using: "node16"
   main: "dist/index.js"
