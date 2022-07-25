@@ -285,7 +285,11 @@ async function run() {
     const filesToBeCheckedByDependency = getFilesToBeCheckByDependency(componentsDependencies);
     const componentsThatNeedToBeModified = await getComponentsThatNeedToBeModified({ filesToBeCheckedByDependency, otherFiles });
 
-    console.log("filesToBeCheckedByDependency", JSON.stringify(filesToBeCheckedByDependency));
+    Object.entries(componentsThatNeedToBeModified)
+      .forEach(([filePath, componentFilePaths]) => {
+
+      });
+
     console.log("componentsThatNeedToBeModified", JSON.stringify(componentsThatNeedToBeModified));
   }
 
