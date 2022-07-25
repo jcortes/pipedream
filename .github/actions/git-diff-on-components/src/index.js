@@ -75,7 +75,9 @@ async function getExistingFilePaths(filePaths = []) {
         filePath,
         exists: await fileExist(filePath)
       }));
-  return Promise.all(existingFilePaths);
+  return Promise.all(existingFilePaths)
+    .filter(({ exists }) => exists)
+    .map(({ filePath }) => filePath);
 }
 
 async function getFilesContent(filePaths = []) {
@@ -273,48 +275,48 @@ async function run() {
   const existingFilePaths = await getExistingFilePaths(filteredFilePaths);
   console.log("existingFilePaths", JSON.stringify(existingFilePaths));
 
-  // const componentsThatDidNotModifyVersion = await processFiles({ filePaths: filteredFilePaths });
+  const componentsThatDidNotModifyVersion = await processFiles({ filePaths: existingFilePaths });
 
-  // componentsThatDidNotModifyVersion.forEach((filePath) => {
-  //   console.log(`You didn't modify the version of ${filePath}`);
-  // });
+  componentsThatDidNotModifyVersion.forEach((filePath) => {
+    console.log(`You didn't modify the version of ${filePath}`);
+  });
 
-  // if (componentsThatDidNotModifyVersion.length) {
-  //   core.setFailed("You need to increment the version on some components. Please see the output above and https://pipedream.com/docs/components/guidelines/#versioning for more information");
-  // }
+  if (componentsThatDidNotModifyVersion.length) {
+    core.setFailed("You need to increment the version on some components. Please see the output above and https://pipedream.com/docs/components/guidelines/#versioning for more information");
+  }
 
-  // const filteredWithOtherFilePaths = getFilteredFilePaths({ allFilePaths: allFiles, allowOtherFiles: true });
-  // const otherFiles = difference(filteredWithOtherFilePaths, filteredFilePaths);
+  const filteredWithOtherFilePaths = getFilteredFilePaths({ allFilePaths: allFiles, allowOtherFiles: true });
+  const otherFiles = difference(filteredWithOtherFilePaths, existingFilePaths);
 
-  // if (otherFiles.length) {
-  //   console.log("Need to check each component in the repo and compare with otherFiles array");
-  //   console.log("otherFiles", otherFiles);
+  if (otherFiles.length) {
+    console.log("Need to check each component in the repo and compare with otherFiles array");
+    console.log("otherFiles", otherFiles);
 
-  //   const componentsPath = join(__dirname, "/../../../../components");
-  //   const apps = await readdir(componentsPath);
-  //   const allFilePaths = await getAllFilePaths({ componentsPath, apps });
-  //   const dependencyFilesDict = getDependencyFilesDict(allFilePaths);
-  //   const componentsDependencies = getComponentsDependencies({ filePaths: otherFiles, dependencyFilesDict });
-  //   const filesToBeCheckedByDependency = getFilesToBeCheckByDependency(componentsDependencies);
-  //   const componentsThatNeedToBeModified = await getComponentsThatNeedToBeModified({ filesToBeCheckedByDependency, otherFiles });
+    const componentsPath = join(__dirname, "/../../../../components");
+    const apps = await readdir(componentsPath);
+    const allFilePaths = await getAllFilePaths({ componentsPath, apps });
+    const dependencyFilesDict = getDependencyFilesDict(allFilePaths);
+    const componentsDependencies = getComponentsDependencies({ filePaths: otherFiles, dependencyFilesDict });
+    const filesToBeCheckedByDependency = getFilesToBeCheckByDependency(componentsDependencies);
+    const componentsThatNeedToBeModified = await getComponentsThatNeedToBeModified({ filesToBeCheckedByDependency, otherFiles });
 
-  //   // console.log("componentsThatNeedToBeModified", JSON.stringify(componentsThatNeedToBeModified));
+    // console.log("componentsThatNeedToBeModified", JSON.stringify(componentsThatNeedToBeModified));
 
-  //   const componentsPendingForGitDiff = 
-  //     Object.entries(componentsThatNeedToBeModified)
-  //       .map(async ([filePath, componentFilePaths]) =>
-  //         componentFilePaths.map((componentFilePath) =>
-  //           ({ filePath, componentFilePath })))
-  //       .flat(Number.POSITIVE_INFINITY);
-  //   console.log("componentsPendingForGitDiff", componentsPendingForGitDiff);
+    const componentsPendingForGitDiff = 
+      Object.entries(componentsThatNeedToBeModified)
+        .map(async ([filePath, componentFilePaths]) =>
+          componentFilePaths.map((componentFilePath) =>
+            ({ filePath, componentFilePath })))
+        .flat(Number.POSITIVE_INFINITY);
+    console.log("componentsPendingForGitDiff", componentsPendingForGitDiff);
 
-  //   const componentsDiffContents = await checkVersionModification(componentsPendingForGitDiff);
-  //   console.log("componentsDiffContents", componentsDiffContents);
+    const componentsDiffContents = await checkVersionModification(componentsPendingForGitDiff);
+    console.log("componentsDiffContents", componentsDiffContents);
 
     
-  // }
+  }
 
-  // core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
+  core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
 }
 
 run()
