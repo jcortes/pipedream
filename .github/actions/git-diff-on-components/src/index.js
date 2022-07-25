@@ -60,6 +60,11 @@ function getFilteredFilePaths({ allFilePaths = [], allowOtherFiles } = {}) {
 async function getFilesContent(filePaths = []) {
   const contentFilesPromises =
     filePaths
+      .filter(async (filePath) => {
+        const stat = await lstat(filePath);
+        console.log(filePath, stat);
+        return stat;
+      })
       .map(async (filePath) => ({
         filePath,
         contents: await readFile(filePath, "utf-8")
@@ -249,7 +254,6 @@ async function checkVersionModification(componentsPendingForGitDiff) {
 
 async function run() {
   const filteredFilePaths = getFilteredFilePaths({ allFilePaths: allFiles });
-  console.log("filteredFilePaths", JSON.stringify(filteredFilePaths));
   const componentsThatDidNotModifyVersion = await processFiles({ filePaths: filteredFilePaths });
 
   componentsThatDidNotModifyVersion.forEach((filePath) => {
