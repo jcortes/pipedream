@@ -249,6 +249,7 @@ async function checkVersionModification(componentsPendingForGitDiff) {
 
 async function run() {
   const filteredFilePaths = getFilteredFilePaths({ allFilePaths: allFiles });
+  console.log("filteredFilePaths", JSON.stringify(filteredFilePaths));
   const componentsThatDidNotModifyVersion = await processFiles({ filePaths: filteredFilePaths });
 
   componentsThatDidNotModifyVersion.forEach((filePath) => {
