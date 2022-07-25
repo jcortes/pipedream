@@ -69,7 +69,7 @@ function fileExist(filePath) {
   });
 }
 
-function getExistingFilePaths(filePaths = []) {
+async function getExistingFilePaths(filePaths = []) {
   return Promise.all(filePaths.filter(async (filePath) => await fileExist(filePath)));
 }
 
