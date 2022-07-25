@@ -63,7 +63,6 @@ async function fileExist(filePath) {
       await lstat(filePath);
       return resolve(true);
     } catch (error) {
-      console.log(filePath, "does not exists");
       return resolve(false);
     }
   });
@@ -71,12 +70,21 @@ async function fileExist(filePath) {
 
 async function getFilesContent(filePaths = []) {
   const existingFilePaths = await Promise.all(filePaths.filter(fileExist));
+  // const contentFilesPromises =
+  //   existingFilePaths
+  //     .map(async (filePath) => ({
+  //       filePath,
+  //       contents: await readFile(filePath, "utf-8")
+  //     }));
   const contentFilesPromises =
     existingFilePaths
-      .map(async (filePath) => ({
-        filePath,
-        contents: await readFile(filePath, "utf-8")
-      }));
+      .map(async (filePath) => {
+        console.log(filePath);
+        return {
+          filePath,
+          contents: await readFile(filePath, "utf-8")
+        };
+      });
 
   return Promise.all(contentFilesPromises);
 }
