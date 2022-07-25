@@ -268,6 +268,7 @@ async function checkVersionModification(componentsPendingForGitDiff) {
     componentsPendingForGitDiff
       .map(async ({ filePath, componentFilePath }) => ({
         filePath,
+        componentFilePath,
         contents: await execGitDiffContents(componentFilePath)
       }))
   );
@@ -308,7 +309,7 @@ async function run() {
         .flat(Number.POSITIVE_INFINITY);
 
     const componentsDiffContents = await checkVersionModification(componentsPendingForGitDiff);
-    console.log("componentsDiffContents", componentsDiffContents);
+    console.log("componentsDiffContents", JSON.stringify(componentsDiffContents));
   }
 
   core.setOutput("pending_component_file_paths", componentsThatDidNotModifyVersion);
