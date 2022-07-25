@@ -57,14 +57,23 @@ function getFilteredFilePaths({ allFilePaths = [], allowOtherFiles } = {}) {
     });
 }
 
+async function fileExist(filePath) {
+  return new Promise(async (resolve) => {
+    try {
+      await lstat(filePath);
+      console.log(filePath, "exists");
+      return resolve(true);
+    } catch (error) {
+      console.log(filePath, "does not exists");
+      return resolve(false);
+    }
+  });
+}
+
 async function getFilesContent(filePaths = []) {
   const contentFilesPromises =
     filePaths
-      .filter(async (filePath) => {
-        const stat = await lstat(filePath);
-        console.log(filePath, stat);
-        return stat;
-      })
+      .filter(async (filePath) => await fileExist(filePath))
       .map(async (filePath) => ({
         filePath,
         contents: await readFile(filePath, "utf-8")
