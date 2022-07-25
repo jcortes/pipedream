@@ -61,7 +61,6 @@ async function fileExist(filePath) {
   return new Promise(async (resolve) => {
     try {
       await lstat(filePath);
-      console.log(filePath, "exists");
       return resolve(true);
     } catch (error) {
       console.log(filePath, "does not exists");
@@ -71,9 +70,9 @@ async function fileExist(filePath) {
 }
 
 async function getFilesContent(filePaths = []) {
+  const existingFilePaths = await Promise.all(filePaths.filter(fileExist));
   const contentFilesPromises =
-    filePaths
-      .filter(async (filePath) => await fileExist(filePath))
+    existingFilePaths
       .map(async (filePath) => ({
         filePath,
         contents: await readFile(filePath, "utf-8")
