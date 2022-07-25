@@ -39,7 +39,7 @@ async function execCmd(...args) {
 }
 
 async function execGitDiffContents(filePath) {
-  const args = ["diff", "--unified=0", "--quiet", `${baseCommit}...${headCommit}`, filePath];
+  const args = ["diff", "--unified=0", `${baseCommit}...${headCommit}`, filePath];
   return execCmd("git", args);
 }
 
