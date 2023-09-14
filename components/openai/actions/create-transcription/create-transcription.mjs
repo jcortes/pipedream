@@ -22,7 +22,7 @@ const pipelineAsync = promisify(stream.pipeline);
 
 export default {
   name: "Create Transcription",
-  version: "0.0.9",
+  version: "0.0.10",
   key: "openai-create-transcription",
   description: "Transcribes audio into the input language. [See docs here](https://platform.openai.com/docs/api-reference/audio/create).",
   type: "action",
@@ -124,51 +124,91 @@ export default {
         $,
       });
     },
-    async function chunkFile({ file, outputDir }) {
-    const ffmpegPath = ffmpegInstaller.path;
-    const ext = extname(file);
+    createFileChunk({
+      file, outputDir,
+    }) {
+      const command = `cp "${file}" "${outputDir}/chunk-000${extname(file)}"`;
+      return execAsync(command);
+    },
+    async getAudioFileDuration(file) {
+      const { stdout } = await execAsync(`${ffmpegInstaller.path} -i "${file}" 2>&1 | grep "Duration"`);
+      const duration = stdout.match(/\d{2}:\d{2}:\d{2}\.\d{2}/s)[0];
+      return duration.split(":").map(parseFloat);
+    },
+    segmentAudioFile({
+      file, segmentTime, outputDir,
+    }) {
+      const command = `${ffmpegInstaller.path} -i "${file}" -f segment -segment_time ${segmentTime} -c copy "${outputDir}/chunk-%03d${extname(file)}"`;
+      return execAsync(command);
+    },
+    getChunkSize({
+      index, outputDir, ext,
+    }) {
+      const chunkPath = `${outputDir}/chunk-${String(index).padStart(3, "0")}${ext}`;
+      return fs.statSync(chunkPath).size / (1024 * 1024);
+    },
+    cleanupPreviousChunks({
+      numberOfChunks, outputDir, ext,
+    }) {
+      for (let j = 0; j < numberOfChunks; j++) {
+        fs.unlinkSync(`${outputDir}/chunk-${String(j).padStart(3, "0")}${ext}`);
+      }
+    },
+    async chunkFile({
+      file, outputDir,
+    }) {
+      const ext = extname(file);
+      const fileSizeInMB = fs.statSync(file).size / (1024 * 1024);
+      const numberOfChunks = Math.ceil(fileSizeInMB / 23);
 
-    const fileSizeInMB = fs.statSync(file).size / (1024 * 1024);
-    
-    let numberOfChunks = Math.ceil(fileSizeInMB / 23);
-    
-    if (numberOfChunks === 1) {
-        await execAsync(`cp "${file}" "${outputDir}/chunk-000${ext}"`);
-        return;
-    }
+      if (numberOfChunks === 1) {
+        return this.createFileChunk({
+          file,
+          outputDir,
+        });
+      }
 
-    const { stdout } = await execAsync(`${ffmpegPath} -i "${file}" 2>&1 | grep "Duration"`);
-    const duration = stdout.match(/\d{2}:\d{2}:\d{2}\.\d{2}/s)[0];
-    const [ hours, minutes, seconds ] = duration.split(":").map(parseFloat);
+      const [
+        hours,
+        minutes,
+        seconds,
+      ] = this.getAudioFileDuration(file);
 
-    let totalSeconds = (hours * 60 * 60) + (minutes * 60) + seconds;
-    let segmentTime = Math.ceil(totalSeconds / numberOfChunks);
-    
-    // Re-chunking loop to ensure each chunk is less than or equal to 25MB
-    let allChunksValid = false;
-    while (!allChunksValid) {
-        const command = `${ffmpegPath} -i "${file}" -f segment -segment_time ${segmentTime} -c copy "${outputDir}/chunk-%03d${ext}"`;
-        await execAsync(command);
+      const totalSeconds = (hours * 60 * 60) + (minutes * 60) + seconds;
+      let segmentTime = Math.ceil(totalSeconds / numberOfChunks);
+
+      // Re-chunking loop to ensure each chunk is less than or equal to 25MB
+      let allChunksValid = false;
+      while (!allChunksValid) {
+        await this.segmentAudioFile({
+          file,
+          segmentTime,
+          outputDir,
+        });
 
         allChunksValid = true;
         for (let i = 0; i < numberOfChunks; i++) {
-            const chunkPath = `${outputDir}/chunk-${String(i).padStart(3, '0')}${ext}`;
-            const chunkSizeInMB = fs.statSync(chunkPath).size / (1024 * 1024);
+          const chunkSizeInMB = this.getChunkSize({
+            index: i,
+            outputDir,
+            ext,
+          });
 
-            if (chunkSizeInMB > 25) {
-                // Adjust segmentTime slightly downward
-                segmentTime -= 1;
-                allChunksValid = false;
+          if (chunkSizeInMB > 25) {
+            // Adjust segmentTime slightly downward
+            segmentTime -= 1;
+            allChunksValid = false;
 
-                // Clean up the previously generated chunks
-                for (let j = 0; j < numberOfChunks; j++) {
-                    fs.unlinkSync(`${outputDir}/chunk-${String(j).padStart(3, '0')}${ext}`);
-                }
-                break; // Break out of the chunk size checking loop to start re-chunking
-            }
+            this.cleanupPreviousChunks({
+              numberOfChunks,
+              outputDir,
+              ext,
+            });
+            break; // Break out of the chunk size checking loop to start re-chunking
+          }
         }
-    }
-},
+      }
+    },
     transcribeFiles({
       files, outputDir, $,
     }) {
